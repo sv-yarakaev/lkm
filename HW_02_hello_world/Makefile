@@ -25,7 +25,7 @@ format:
 clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
 
-load:
+load: kbuild
 	sudo insmod $(BUILD_DIR)/$(TARGET).ko
 
 unload:
