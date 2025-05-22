@@ -16,7 +16,7 @@ TARGET = ehlo
 $(shell mkdir -p ${BUILD_DIR})
 
 kbuild:
-	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNEL_DIR) M=$(PWD)/src modules
 	mv $(BUILD_FILES) $(BUILD_DIR)/.
 
 format:
@@ -24,5 +24,11 @@ format:
 
 clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
+
+load:
+	sudo insmod $(BUILD_DIR)/$(TARGET).ko
+
+unload:
+	sudo rmmod $(TARGET)
 
 .PHONY: kbuild clean format
