@@ -1,0 +1,10 @@
+KERNEL_SRC := /home/stv/kernel/linux-6.1.130
+
+
+obj-m := ehlo.o
+
+all:
+	make -C $(KERNEL_SRC) M=$(PWD) modules
+
+clean:
+	make -C $(KERNEL_SRC) M=$(PWD) clean
