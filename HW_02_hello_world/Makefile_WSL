@@ -1,10 +1,34 @@
-KERNEL_SRC := /home/stv/kernel/linux-6.1.130
+PWD := $(shell pwd)
+KERNEL_DIR := /home/stv/kernel/linux-6.1.130
 
+SRC_DIR := $(PWD)/src
+BUILD_DIR := $(PWD)/build
+BUILD_FILES += $(SRC_DIR)/*.ko
 
-obj-m := ehlo.o
+CLANG_FORMAT_VERS ?= 15
+CLANG_FORMAT := clang-format-$(CLANG_FORMAT_VERS)
+CLANG_FORMAT_FLAGS += -i
+FORMAT_FILES := $(SRC_DIR)/*.c
 
-all:
-	make -C $(KERNEL_SRC) M=$(PWD) modules
+TARGET = ehlo
+#obj-m := $(SRC_DIR)/$(TARGET).o
+
+$(shell mkdir -p ${BUILD_DIR})
+
+kbuild:
+	$(MAKE) -C $(KERNEL_DIR) M=$(PWD)/src modules
+	mv $(BUILD_FILES) $(BUILD_DIR)/.
+
+format:
+	$(CLANG_FORMAT) $(CLANG_FORMAT_FLAGS) $(FORMAT_FILES)
 
 clean:
-	make -C $(KERNEL_SRC) M=$(PWD) clean
+	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
+
+load: kbuild
+	sudo insmod $(BUILD_DIR)/$(TARGET).ko
+
+unload:
+	sudo rmmod $(TARGET)
+
+.PHONY: kbuild clean format
