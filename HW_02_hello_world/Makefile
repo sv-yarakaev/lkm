@@ -1,5 +1,6 @@
 PWD := $(shell pwd)
-KERNEL_DIR ?= /lib/modules/$(shell uname -r)/build
+KERNEL_VERSION ?= $(shell uname -r)
+KERNEL_DIR ?= /lib/modules/$(KERNEL_VERSION)/build
 
 SRC_DIR := $(PWD)/src
 BUILD_DIR := $(PWD)/build
