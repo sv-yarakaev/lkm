@@ -14,7 +14,7 @@ for version in "${KERNEL_VERSIONS[@]}"; do
     toolbox run -c "$name" make KERNEL_VERSION="$version"
     formatted_string="APP-${name}.${version}"
     echo "$formatted_string"
-    cp "$MODULE_NAME.ko" "build/$MODULE_NAME-$version.ko"
+    #cp "$MODULE_NAME.ko" "build/$MODULE_NAME-$version.ko"
 done
 
 echo "=== All builds completed! ==="
