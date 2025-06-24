@@ -1,0 +1,18 @@
+KDIR := /home/stv/kernel/linux-6.1.130
+
+
+.PHONY: all
+.SILENT: clean
+
+
+CURRENT = $(shell uname -r)
+PWD = $(shell pwd)
+
+TARGET = ehlo
+obj-m := $(TARGET).o
+
+all:
+	$(MAKE) -C $(KDIR) M=$(PWD) modules
+
+clean:
+	rm -f *.ko *.cmd .*.cmd *.mod *.mod.* *.o *.order *.symvers
