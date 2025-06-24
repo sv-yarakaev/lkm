@@ -27,5 +27,6 @@ format:
 
 clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
+	rm -f $(SRC_DIR)/*.cmd $(SRC_DIR)/*.o
 
 .PHONY: kbuild clean format

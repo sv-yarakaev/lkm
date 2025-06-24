@@ -1,153 +1,133 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#include <linux/errno.h>
 #include <linux/init.h>
-#include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/moduleparam.h>
-#include <linux/stat.h>
+#include <linux/kernel.h>
 #include <linux/string.h>
+#include <linux/uaccess.h>
 
-#define MAX_STR_LEN 100
 
-static int idx = 0;
-static char value = '\0';
-static char str[MAX_STR_LEN] = "default";
 
-static struct {
-  int idx;
-  int val;
-} check;
+#define MAX_LEN 100
+
+static char string[MAX_LEN + 1] = "Default string!";
+
+
+
+static int string_get(char *buffer, const struct kernel_param *kp)
+{
+    strncpy(buffer, string, MAX_LEN);
+    return strlen(buffer);
+}
+
+static const struct kernel_param_ops string_ops = {
+    .get = string_get,
+    .set = NULL,  
+};
+
+module_param_cb(string, &string_ops, &string, 0444);
+MODULE_PARM_DESC(string, "String (RO), modified only via index and char");
+
+static int index = -1;
+static char char_param = '\0';
+
 
 static void modify_string(void)
 {
     size_t len;
 
-    if (idx < 1 || idx > MAX_STR_LEN)
+    if (index < 1 || index > MAX_LEN)
         return;
 
-    if (value < 32 || value > 126)
+    if (char_param < 32 || char_param > 126)
         return;
 
+    len = strlen(string);
 
-    len = strlen(str);
-
-    if (idx <= len) {
-        str[idx - 1] = value;
-        pr_info("Modified string[%d] = '%c' -> \"%s\"\n", idx - 1, value, str);
+    if (index <= len) {
+        string[index - 1] = char_param;
+        pr_info("Modified string[%d] = '%c' -> \"%s\"\n", index - 1, char_param, string);
     } else {
-        pr_warn("Index %d out of bounds (length: %zu)\n", idx, len);
+        pr_warn("Index %d out of bounds (length: %zu)\n", index, len);
     }
-
-   
+    
 }
 
 
+static int index_set(const char *val, const struct kernel_param *kp)
+{
+    int ret, temp;
 
+    ret = kstrtoint(val, 10, &temp);
+    if (ret < 0)
+        return ret;
 
-// Проверка и применение idx (должен быть в пределах длины str)
-static int param_set_idx(const char *val, const struct kernel_param *kp) {
-  int new_idx, ret;
-  ret = kstrtoint(val, 10, &new_idx); // Преобразуем строку в int
-  if (ret < 0) {
-    pr_err("Invalid idx value\n");
-    return ret;
-  }
+    if (temp < 1 || temp > MAX_LEN)
+        return -EINVAL;
 
-  if (new_idx < 0 || new_idx >= strlen(str)) {
-    pr_err("idx %d is out of bounds (str len: %zu)\n", new_idx, strlen(str));
-    return -EINVAL;
-  }
-  check.idx = 1;
+    index = temp;
+    modify_string();  
 
-  *(int *)kp->arg = new_idx; // Устанавливаем новое значение
-  return 0;
+    return 0;
 }
 
-// Получение текущего idx
-static int param_get_idx(char *buffer, const struct kernel_param *kp) {
-  return sprintf(buffer, "%d", *(int *)kp->arg);
+static int index_get(char *buffer, const struct kernel_param *kp)
+{
+    return sprintf(buffer, "%d", index);
 }
 
-// Проверка и применение value (должен быть печатным ASCII-символом)
-static int param_set_value(const char *val, const struct kernel_param *kp) {
-  
-  if (!val ) {
-    pr_err("value must be a single character\n");
-    return -EINVAL;
-  }
-
-  //new_value = val;
-  if (*val < 32 || *val > 126) {
-    pr_err("value must be a printable ASCII character\n");
-    return -EINVAL;
-  }
-  check.val = 1;
-  *(char *)kp->arg = *val; // Устанавливаем новое значение
-  return 0;
-}
-
-// Получение текущего value
-static int param_get_value(char *buffer, const struct kernel_param *kp) {
-  return sprintf(buffer, "%c", *(char *)kp->arg);
-}
-
-// Проверка и применение str (длина не должна превышать MAX_STR_LEN)
-// static int param_set_str(const char *val, const struct kernel_param *kp) {
-//   if (strlen(val) >= MAX_STR_LEN) {
-//     pr_err("str too long (max %d chars)\n", MAX_STR_LEN - 1);
-//     return -EINVAL;
-//   }
-
-//   strncpy(str, val, MAX_STR_LEN);
-//   return 0;
-// }
-
-// Получение текущего str
-static int param_get_str(char *buffer, const struct kernel_param *kp) {
-  strncpy(buffer, str, MAX_STR_LEN);
-  return strlen(buffer);
-}
-
-//--- Объявление параметров с callback ---//
-static const struct kernel_param_ops param_ops_idx = {
-    .set = param_set_idx,
-    .get = param_get_idx,
+static const struct kernel_param_ops index_ops = {
+    .set = index_set,
+    .get = index_get,
 };
 
-static const struct kernel_param_ops param_ops_value = {
-    .set = param_set_value,
-    .get = param_get_value,
-};
+module_param_cb(index, &index_ops, &index, 0660);
+MODULE_PARM_DESC(index, "Index from 1 to 100");
 
-static const struct kernel_param_ops param_str = {
-    .set = NULL,
-    .get = param_get_str,
-};
 
-module_param_cb(idx, &param_ops_idx, &idx, 0644);
-MODULE_PARM_DESC(idx, "Index in str (0 <= idx < MAX_STR_LEN");
+static int char_set(const char *val, const struct kernel_param *kp)
+{
+    if (!val || val[0] == '\0' || val[1] != '\0')
+        return -EINVAL;
 
-module_param_cb(value, &param_ops_value, &value, 0644);
-MODULE_PARM_DESC(value, "Character to insert into str (must be printable ASCII)");
+    if (val[0] < 32 || val[0] > 126)
+        return -EINVAL;
 
-module_param_cb(str, &param_str, &str, 0444);
-MODULE_PARM_DESC(str, "String(RO) to modify only idx and char (max 100 chars)");
+    char_param = val[0];
+    modify_string();  
 
-//---------------------------------------
-// Инициализация и выход
-//---------------------------------------
-static int __init ehlo_init(void) {
-  printk(KERN_INFO "(default values) Module loaded: idx=%d, value='%c', str=\"%s\"\n", idx,
-         value, str);
-  return 0;
+    return 0;
 }
 
-static void __exit ehlo_exit(void) { pr_info("module is free\n"); }
+static int char_get(char *buffer, const struct kernel_param *kp)
+{
+    return sprintf(buffer, "%c", char_param);
+}
 
-module_init(ehlo_init);
-module_exit(ehlo_exit);
+static const struct kernel_param_ops char_ops = {
+    .set = char_set,
+    .get = char_get,
+};
+
+module_param_cb(char, &char_ops, &char_param, 0660);
+MODULE_PARM_DESC(char, "Visible ASCII character");
+
+static int __init mymodule_init(void)
+{
+    pr_info("Module loaded. Initial string: \"%s\"\n", string);
+    return 0;
+}
+
+static void __exit mymodule_exit(void)
+{
+    pr_info("Module exiting. Final string: \"%s\"\n", string);
+}
+
+module_init(mymodule_init);
+module_exit(mymodule_exit);
+
+
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Stanislav");
-MODULE_DESCRIPTION("A homework hello(ehlo)  module for the Linux kernel");
-MODULE_VERSION("0.2.1");
+MODULE_AUTHOR("Stv");
+MODULE_DESCRIPTION("HW 2 ");
+MODULE_VERSION("0.3");
