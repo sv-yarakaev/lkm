@@ -93,16 +93,16 @@ static const struct kernel_param_ops char_ops = {
     .get = char_get,
 };
 
-module_param_cb(char, &char_ops, &ch_val, 0660);
-MODULE_PARM_DESC(char, "Visible ASCII character");
+module_param_cb(ch_val, &char_ops, &ch_val, 0660);
+MODULE_PARM_DESC(ch_val, "Visible ASCII character");
 
 static int __init ehlo_init(void) {
-  pr_info(":init. Initial string: \"%s\"\n", my_str);
+  pr_info("Init. Initial string: \"%s\"\n", my_str);
   return 0;
 }
 
 static void __exit ehlo_exit(void) {
-  pr_info(":exit. Final string: \"%s\"\n", my_str);
+  pr_info("Exit. Final string: \"%s\"\n", my_str);
 }
 
 module_init(ehlo_init);
@@ -110,5 +110,5 @@ module_exit(ehlo_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
-MODULE_DESCRIPTION("HW 2 ");
+MODULE_DESCRIPTION("HW 2");
 MODULE_VERSION("0.3");
