@@ -30,5 +30,5 @@ clean:
 	rm -f $(SRC_DIR)/*.cmd $(SRC_DIR)/*.o
 
 chech:
-	sudo check.py
+	sudo python3 check.py
 .PHONY: kbuild clean format
