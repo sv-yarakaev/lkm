@@ -47,7 +47,7 @@ def test_string_modification():
         update_char_at(i + 1, char)
         current = read_string()
         assert current[i] == char, f"Mismatch at index {i}: expected {char}, got {current[i]}"
-        print(f"[+] Changed index {i + 1} to '{char}' → {current}")
+        print(f"[+] Changed index {i + 1} to '{char}' => {current}")
 
     final = read_string()
     assert final.startswith(test_target), "Final string mismatch"
