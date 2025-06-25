@@ -10,7 +10,7 @@ MODULE_NAME_WITH_VERSION := $(MODULE_NAME)_$(KERNEL_VERSION)
 BUILD_FILES += $(SRC_DIR)/$(MODULE_NAME).ko
 
 
-CLANG_FORMAT_VERS ?= 19
+CLANG_FORMAT_VERS ?= 20
 CLANG_FORMAT := clang-format-$(CLANG_FORMAT_VERS)
 CLANG_FORMAT_FLAGS += -i
 FORMAT_FILES := $(SRC_DIR)/*.c
@@ -29,4 +29,6 @@ clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
 	rm -f $(SRC_DIR)/*.cmd $(SRC_DIR)/*.o
 
+chech:
+	sudo python3 check.py
 .PHONY: kbuild clean format

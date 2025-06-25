@@ -1,106 +1,91 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/init.h>
-#include <linux/module.h>
 #include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
 
-
-
 #define MAX_LEN 100
 
-static char string[MAX_LEN + 1] = "Default string!";
+static char my_str[MAX_LEN + 1] = "Default string!";
+static int idx = -1;
+static char ch_val = '\0';
 
-
-
-static int string_get(char *buffer, const struct kernel_param *kp)
-{
-    strncpy(buffer, string, MAX_LEN);
-    return strlen(buffer);
+static int my_str_get(char *buffer, const struct kernel_param *kp) {
+  strncpy(buffer, my_str, MAX_LEN);
+  return strlen(buffer);
 }
 
-static const struct kernel_param_ops string_ops = {
-    .get = string_get,
-    .set = NULL,  
+static const struct kernel_param_ops my_str_ops = {
+    .get = my_str_get,
+    .set = NULL,
 };
 
-module_param_cb(string, &string_ops, &string, 0444);
-MODULE_PARM_DESC(string, "String (RO), modified only via index and char");
+module_param_cb(my_str, &my_str_ops, &my_str, 0444);
+MODULE_PARM_DESC(my_str, "String (RO), modified only via idx and char");
 
-static int index = -1;
-static char char_param = '\0';
+static void modify_my_str(void) {
+  size_t len;
 
+  if (idx < 1 || idx > MAX_LEN)
+    return;
 
-static void modify_string(void)
-{
-    size_t len;
+  if (ch_val < 32 || ch_val > 126)
+    return;
 
-    if (index < 1 || index > MAX_LEN)
-        return;
+  len = strlen(my_str);
 
-    if (char_param < 32 || char_param > 126)
-        return;
-
-    len = strlen(string);
-
-    if (index <= len) {
-        string[index - 1] = char_param;
-        pr_info("Modified string[%d] = '%c' -> \"%s\"\n", index - 1, char_param, string);
-    } else {
-        pr_warn("Index %d out of bounds (length: %zu)\n", index, len);
-    }
-    
+  if (idx <= len) {
+    my_str[idx - 1] = ch_val;
+    pr_info("Modified string[%d] = '%c' -> \"%s\"\n", idx - 1, ch_val, my_str);
+  } else {
+    pr_warn("idx %d out of bounds (length: %zu)\n", idx, len);
+  }
 }
 
+static int idx_set(const char *val, const struct kernel_param *kp) {
+  int ret, temp;
 
-static int index_set(const char *val, const struct kernel_param *kp)
-{
-    int ret, temp;
+  ret = kstrtoint(val, 10, &temp);
+  if (ret < 0)
+    return ret;
 
-    ret = kstrtoint(val, 10, &temp);
-    if (ret < 0)
-        return ret;
+  if (temp < 1 || temp > MAX_LEN)
+    return -EINVAL;
 
-    if (temp < 1 || temp > MAX_LEN)
-        return -EINVAL;
+  idx = temp;
+  modify_my_str();
 
-    index = temp;
-    modify_string();  
-
-    return 0;
+  return 0;
 }
 
-static int index_get(char *buffer, const struct kernel_param *kp)
-{
-    return sprintf(buffer, "%d", index);
+static int idx_get(char *buffer, const struct kernel_param *kp) {
+  return sprintf(buffer, "%d", idx);
 }
 
-static const struct kernel_param_ops index_ops = {
-    .set = index_set,
-    .get = index_get,
+static const struct kernel_param_ops idx_ops = {
+    .set = idx_set,
+    .get = idx_get,
 };
 
-module_param_cb(index, &index_ops, &index, 0660);
-MODULE_PARM_DESC(index, "Index from 1 to 100");
+module_param_cb(idx, &idx_ops, &idx, 0660);
+MODULE_PARM_DESC(idx, "idx from 1 to 100");
 
+static int char_set(const char *val, const struct kernel_param *kp) {
+  if (!val || val[0] == '\0' || val[1] != '\0')
+    return -EINVAL;
 
-static int char_set(const char *val, const struct kernel_param *kp)
-{
-    if (!val || val[0] == '\0' || val[1] != '\0')
-        return -EINVAL;
+  if (val[0] < 32 || val[0] > 126)
+    return -EINVAL;
 
-    if (val[0] < 32 || val[0] > 126)
-        return -EINVAL;
+  ch_val = val[0];
+  modify_my_str();
 
-    char_param = val[0];
-    modify_string();  
-
-    return 0;
+  return 0;
 }
 
-static int char_get(char *buffer, const struct kernel_param *kp)
-{
-    return sprintf(buffer, "%c", char_param);
+static int char_get(char *buffer, const struct kernel_param *kp) {
+  return sprintf(buffer, "%c", ch_val);
 }
 
 static const struct kernel_param_ops char_ops = {
@@ -108,26 +93,22 @@ static const struct kernel_param_ops char_ops = {
     .get = char_get,
 };
 
-module_param_cb(char, &char_ops, &char_param, 0660);
-MODULE_PARM_DESC(char, "Visible ASCII character");
+module_param_cb(ch_val, &char_ops, &ch_val, 0660);
+MODULE_PARM_DESC(ch_val, "Visible ASCII character");
 
-static int __init mymodule_init(void)
-{
-    pr_info("Module loaded. Initial string: \"%s\"\n", string);
-    return 0;
+static int __init ehlo_init(void) {
+  pr_info("Init. Initial string: \"%s\"\n", my_str);
+  return 0;
 }
 
-static void __exit mymodule_exit(void)
-{
-    pr_info("Module exiting. Final string: \"%s\"\n", string);
+static void __exit ehlo_exit(void) {
+  pr_info("Exit. Final string: \"%s\"\n", my_str);
 }
 
-module_init(mymodule_init);
-module_exit(mymodule_exit);
-
-
+module_init(ehlo_init);
+module_exit(ehlo_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
-MODULE_DESCRIPTION("HW 2 ");
-MODULE_VERSION("0.3");
+MODULE_DESCRIPTION("HW 2");
+MODULE_VERSION("0.4");

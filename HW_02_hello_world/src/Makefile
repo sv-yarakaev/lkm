@@ -5,7 +5,7 @@ KDIR := /home/stv/kernel/linux-6.1.130
 .SILENT: clean
 
 
-CLANG_FORMAT_VERS ?= 15
+CLANG_FORMAT_VERS ?= 20
 CLANG_FORMAT := clang-format-$(CLANG_FORMAT_VERS)
 CLANG_FORMAT_FLAGS += -i
 FORMAT_FILES := *.c
