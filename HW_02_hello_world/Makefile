@@ -29,6 +29,6 @@ clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
 	rm -f $(SRC_DIR)/*.cmd $(SRC_DIR)/*.o
 
-chech:
+check:
 	sudo python3 check.py
 .PHONY: kbuild clean format
