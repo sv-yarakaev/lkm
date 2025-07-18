@@ -1,13 +1,13 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#include "linux/list.h"
-#include "linux/slab.h"
-#include "linux/gfp_types.h"
-#include "linux/printk.h"
+#include <linux/list.h>
+#include <linux/slab.h>
+#include <linux/gfp_types.h>
+#include <linux/printk.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/random.h>
-#include "linux/types.h"
+#include <linux/types.h>
 
 #define LENGTH_ID 8
 #define LENGTH_LIST 124
@@ -77,7 +77,7 @@ static int init_local_list(void) {
     }
     INIT_LIST_HEAD(&rnd_one->iter);
     list_add_tail(&rnd_one->iter, &rnd_list);
-    pr_info("\tID = %s\n", rnd_one->ID);
+    //pr_info("Number =%d, ID = %s\n",i, rnd_one->ID);
   }
   return 0;
   error:
