@@ -1,0 +1,11 @@
+CompileFlags:
+  Remove: 
+    - -mpreferred-stack-boundary=3
+    - -mindirect-branch=thunk-extern
+    - -mindirect-branch-register
+    - -fno-allow-store-data-races
+    - -fzero-init-padding-bits=all
+    - -fmin-function-alignment=16
+    - -fconserve-stack
+    - -fsanitize=bounds-strict
+    - -mrecord-mcount
