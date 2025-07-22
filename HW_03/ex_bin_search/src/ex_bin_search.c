@@ -1,7 +1,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#include "linux/moduleparam.h"
-#include "asm-generic/errno-base.h"
-#include "linux/llist.h"
+#include <linux/moduleparam.h>
+#include <asm-generic/errno-base.h>
+#include <linux/llist.h>
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/gfp_types.h>
@@ -11,7 +11,7 @@
 #include <linux/module.h>
 #include <linux/random.h>
 #include <linux/types.h>
-#include "linux/sched.h"
+#include <linux/sched.h>
 
 const char *find_pid = "Find PID= %d ";
 const char *notfind_pid = "PID %d not found";
