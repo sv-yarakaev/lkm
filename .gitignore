@@ -55,3 +55,4 @@ temp_files/*
 
 *.swp
 *.swp*
+*cache*
