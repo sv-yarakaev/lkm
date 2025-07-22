@@ -1,23 +1,18 @@
-SUBDIRS := ex_bin_search ex_bitmap ex_list ex_queue ex_rb_tree
-BUILD_DIR := build
 
-.PHONY: all clean $(SUBDIRS)
+SUBDIRS := ex_list ex_bin_search
+export KBUILD_CFLAGS += -fanalyzer
+export EXTRA_CFLAGS += -Wall -Werror -Wextra -Wpointer-arith    
 
-all: $(BUILD_DIR)
+all:
 	@for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir; \
+		echo "Building $$dir..."; \
+		$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(shell pwd)/$$dir modules || { echo "Build failed for $$dir"; exit 1; }; \
 	done
-	@find $(SUBDIRS) -name '*.ko' -exec cp -v {} $(BUILD_DIR)/ \;
-
-$(SUBDIRS): $(BUILD_DIR)
-	@$(MAKE) -C $@
-	@find $@ -name '*.ko' -exec cp -v {} $(BUILD_DIR)/ \;
-
-$(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
 
 clean:
 	@for dir in $(SUBDIRS); do \
+		echo "Cleaning $$dir..."; \
 		$(MAKE) -C $$dir clean; \
 	done
-	rm -rf $(BUILD_DIR)/*
+
+.PHONY: all clean

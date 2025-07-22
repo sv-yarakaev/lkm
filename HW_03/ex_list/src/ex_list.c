@@ -16,6 +16,7 @@ struct rnd_list {
   char *ID;
   struct list_head iter;
 };
+
 static LIST_HEAD(rnd_list);
 
 static char get_random_alnum(void) {
@@ -77,7 +78,7 @@ static int init_local_list(void) {
     }
     INIT_LIST_HEAD(&rnd_one->iter);
     list_add_tail(&rnd_one->iter, &rnd_list);
-    //pr_info("Number =%d, ID = %s\n",i, rnd_one->ID);
+    pr_info("Add some random record number =%d, ID = %s\n",i, rnd_one->ID);
   }
   return 0;
   error:
@@ -86,7 +87,7 @@ static int init_local_list(void) {
 
 static void cleanup_list(void) {
     struct rnd_list *rnd_current, *rnd_tmp;
-    
+    pr_info("Clear list\n");
     list_for_each_entry_safe(rnd_current, rnd_tmp, &rnd_list, iter) {
         list_del(&rnd_current->iter);
         kfree(rnd_current->ID);
@@ -97,9 +98,9 @@ static void cleanup_list(void) {
 static int __init exlist_init(void) {
   pr_info("Init. Example kernel list\n");
   pr_info("Length of my list %d\n", LENGTH_LIST);
-  const char *output_random = create_random_id(LENGTH_ID);
-  pr_info("%s", output_random);
-  kfree(output_random);
+  // const char *output_random = create_random_id(LENGTH_ID);
+  // pr_info("%s", output_random);
+  // kfree(output_random);
   if (init_local_list() != 0) {
     return -1;
   }
