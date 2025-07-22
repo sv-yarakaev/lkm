@@ -1,4 +1,5 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include "linux/moduleparam.h"
 #include "asm-generic/errno-base.h"
 #include "linux/llist.h"
 #include <linux/list.h>
@@ -11,6 +12,25 @@
 #include <linux/random.h>
 #include <linux/types.h>
 #include "linux/sched.h"
+
+const char *find_pid = "Find PID= %d ";
+const char *notfind_pid = "PID %d not found";
+static char output_string[64] = "Enter PID to extern_pid to find";
+
+static int extern_pid = -1;
+static int pid_search(const char *val, const struct kernel_param *kp) {
+
+    return 0;
+}
+
+static const struct kernel_param_ops search_pid = {
+    .set = pid_search,
+    .get = NULL,
+};
+
+
+module_param_cb(extern_pid, &search_pid, &extern_pid, 0660);
+MODULE_PARM_DESC(extern_pid, "PID for search");
 
 static int *array = NULL;
 
@@ -61,7 +81,7 @@ static int create_array(void) {
         return -ENOMEM;
     }
     llist_for_each_entry(entry, my_list.first, list) {
-        printk(KERN_INFO "PID: %d\n", entry->pid);
+        printk(KERN_INFO "Add PID: %d\n", entry->pid);
         array[i] = entry->pid;
     }
     return 0;
@@ -70,7 +90,8 @@ static int create_array(void) {
 
 
 static int __init exbin_search_init(void) {
-  pr_info("Init. Example kernel list\n");
+  pr_info("Init. Example kernel binary search\n");
+  pr_info("Find PID on start module\n");
   create_array();
     
   return 0;
@@ -81,6 +102,18 @@ static void __exit exbin_search_exit(void) {
   free_pid_list();
   pr_info("Exit.\n");
 }
+static int get_put(char *buffer, const struct kernel_param *kp) {
+    strncpy(buffer, output_string, strlen(output_string));
+    return strlen(output_string);
+}
+
+static const struct kernel_param_ops output_param = {
+    .get = get_put,
+    .set = NULL,
+};
+
+module_param_cb(output_string, &output_param, &output_string, 0444);
+MODULE_PARM_DESC(get_put, "Find PID");
 
 module_init(exbin_search_init);
 module_exit(exbin_search_exit);
