@@ -29,8 +29,6 @@ static const struct kernel_param_ops search_pid = {
 };
 
 
-module_param_cb(extern_pid, &search_pid, &extern_pid, 0660);
-MODULE_PARM_DESC(extern_pid, "PID for search");
 
 static int *array = NULL;
 
@@ -46,6 +44,7 @@ static int count_processes(void) {
     int count = 0;
 
     rcu_read_lock();
+    //NOLINTNEXTLINE(clang-analyzer-sizeof-pointer)
     for_each_process(task) {
         struct pids_snap *local = kmalloc(sizeof(struct pids_snap), GFP_KERNEL);
         if (!local) {
@@ -114,6 +113,10 @@ static const struct kernel_param_ops output_param = {
 
 module_param_cb(output_string, &output_param, &output_string, 0444);
 MODULE_PARM_DESC(get_put, "Find PID");
+
+module_param_cb(extern_pid, &search_pid, &extern_pid, 0660);
+MODULE_PARM_DESC(extern_pid, "PID for search");
+
 
 module_init(exbin_search_init);
 module_exit(exbin_search_exit);
