@@ -9,3 +9,5 @@ CompileFlags:
     - -fconserve-stack
     - -fsanitize=bounds-strict
     - -mrecord-mcount
+    - -bugprone-sizeof-expression
+    - -Wno-pointer-size

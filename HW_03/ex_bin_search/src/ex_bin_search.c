@@ -98,8 +98,7 @@ static int count_processes(void) {
     int count = 0;
 
     rcu_read_lock();
-
-    // NOLINTNEXTLINE(clang-analyzer-sizeof-pointer)
+    
     for_each_process(task) {
         struct pids_snap *local = kmalloc(sizeof(struct pids_snap), GFP_KERNEL);
         if (!local) {
