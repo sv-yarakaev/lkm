@@ -6,7 +6,6 @@
     Замечание. Массив не сортируется, так как  заполняется уже отсортированым
 
 */
-#include "linux/sprintf.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <asm-generic/errno-base.h>
 #include <linux/bsearch.h>
@@ -24,7 +23,8 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 #include "linux/kern_levels.h"
-
+#include "linux/sprintf.h"
+#include <linux/sort.h>
 #define MAX_INPUT_STR 64
 char *find_pid = "Find PID= %d ";
 const char *notfind_pid = "PID %d not found";
@@ -33,10 +33,12 @@ static char output_string[MAX_INPUT_STR] = "Enter PID to extern_pid to find";
 static int *array = NULL;
 static int common_size;
 
-static int extern_pid = -1;
+
+
+
 
 static int compare_pids(const void *a, const void *b);
-static int get_put(char *buffer, const struct kernel_param *kp);
+//static int get_put(char *buffer, const struct kernel_param *kp);
 
 static int compare_pids(const void *a, const void *b) {
     int arg1 = *(const int *)a;
@@ -47,22 +49,34 @@ static int compare_pids(const void *a, const void *b) {
 }
 
 static int pid_search(const char *val, const struct kernel_param *kp) {
+
+    pr_info("Search PID = %s\n", val); 
+    pr_info("Array: ");
+    for (int i = 0; i < common_size; i++)
+        pr_cont("%d ", array[i]);
+    pr_cont("\n");
+
     int find_pid;
     int ret = kstrtoint(val, 10, &find_pid);
-    int *result =
-        (int *)bsearch(&ret, array, common_size, sizeof(int), compare_pids);
+    if (ret != 0) {
+        return -EINVAL;
+    }
 
-    if (result != NULL) {
+    int save_rt = find_pid;
+    int *result =
+        (int *)bsearch(&save_rt, array, common_size, sizeof(int), compare_pids);
+
+    if (result) {
         // char buf[100];
-        snprintf(output_string, sizeof(output_string), "Find PID = %d ", ret);
-        get_put(output_string, kp);
-        printk(KERN_INFO "Find PID = %d \n", ret);
+        snprintf(output_string, sizeof(output_string), "Find PID = %d ", save_rt);
+        //get_put(output_string, kp);
+        printk(KERN_INFO "Find PID = %d \n", save_rt);
 
     } else {
         snprintf(output_string, sizeof(output_string), "Not found PID = %d ",
-                 ret);
-        get_put(output_string, kp);
-        printk(KERN_INFO "PID = %d not found \n", ret);
+                save_rt);
+        //get_put(output_string, kp);
+        printk(KERN_INFO "PID = %d not found \n", save_rt);
     }
 
     return 0;
@@ -143,15 +157,13 @@ static void __exit exbin_search_exit(void) {
     free_pid_list();
     pr_info("Exit.\n");
 }
+/*
 static int get_put(char *buffer, const struct kernel_param *kp) {
     strncpy(buffer, output_string, strlen(output_string));
     return strlen(output_string);
 }
+*/
 
-static int set_pid_for_search(const char *value,
-                              const struct kernel_param *kp) {
-    return 0;
-}
 
 static int current_get_pid(char *buffer, const struct kernel_param *kp) {
 
