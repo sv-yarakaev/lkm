@@ -10,3 +10,7 @@ all:
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
 
+test:
+	sudo rmmod ex_bin_search || echo "Already remove"
+	sudo insmod ex_bin_search.ko
+
