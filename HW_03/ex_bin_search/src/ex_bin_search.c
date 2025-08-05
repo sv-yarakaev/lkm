@@ -6,28 +6,29 @@
     Замечание. Массив не сортируется, так как  заполняется уже отсортированым
 
 */
-#include "linux/kern_levels.h"
+#include "linux/sprintf.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#include <linux/moduleparam.h>
 #include <asm-generic/errno-base.h>
-#include <linux/llist.h>
-#include <linux/list.h>
-#include <linux/slab.h>
+#include <linux/bsearch.h>
 #include <linux/gfp_types.h>
-#include <linux/printk.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/random.h>
-#include <linux/types.h>
-#include <linux/sched.h>
-#include <linux/bsearch.h>
 #include <linux/kstrtox.h>
+#include <linux/list.h>
+#include <linux/llist.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/printk.h>
+#include <linux/random.h>
+#include <linux/sched.h>
+#include <linux/slab.h>
+#include <linux/types.h>
+#include "linux/kern_levels.h"
 
-
+#define MAX_INPUT_STR 64
 char *find_pid = "Find PID= %d ";
 const char *notfind_pid = "PID %d not found";
-static char output_string[64] = "Enter PID to extern_pid to find";
+static char output_string[MAX_INPUT_STR] = "Enter PID to extern_pid to find";
 
 static int *array = NULL;
 static int common_size;
@@ -37,35 +38,29 @@ static int extern_pid = -1;
 static int compare_pids(const void *a, const void *b);
 static int get_put(char *buffer, const struct kernel_param *kp);
 
-
 static int compare_pids(const void *a, const void *b) {
-    int arg1 = *(const int*)a;
-    int arg2 = *(const int*)b;
-    if (arg1 > arg2) 
-        return -1;  
-    if (arg1 < arg2) 
-        return 1;
+    int arg1 = *(const int *)a;
+    int arg2 = *(const int *)b;
+    if (arg1 > arg2) return -1;
+    if (arg1 < arg2) return 1;
     return 0;
 }
 
-
-
-
 static int pid_search(const char *val, const struct kernel_param *kp) {
-
     int find_pid;
     int ret = kstrtoint(val, 10, &find_pid);
-    int *result = (int *) bsearch(&ret, array, common_size, sizeof(int), compare_pids); 
+    int *result =
+        (int *)bsearch(&ret, array, common_size, sizeof(int), compare_pids);
 
     if (result != NULL) {
-        //char buf[100];
-        snprintf(output_string,sizeof(output_string), "Find PID = %d ", ret);
+        // char buf[100];
+        snprintf(output_string, sizeof(output_string), "Find PID = %d ", ret);
         get_put(output_string, kp);
         printk(KERN_INFO "Find PID = %d \n", ret);
 
-
     } else {
-        snprintf(output_string,sizeof(output_string), "Not found PID = %d ", ret);
+        snprintf(output_string, sizeof(output_string), "Not found PID = %d ",
+                 ret);
         get_put(output_string, kp);
         printk(KERN_INFO "PID = %d not found \n", ret);
     }
@@ -73,12 +68,10 @@ static int pid_search(const char *val, const struct kernel_param *kp) {
     return 0;
 }
 
-
 static const struct kernel_param_ops search_pid = {
     .set = pid_search,
     .get = NULL,
 };
-
 
 struct pids_snap {
     int pid;
@@ -86,21 +79,17 @@ struct pids_snap {
 };
 static LLIST_HEAD(pids_list);
 
-
-
-
-
 static int count_processes(void) {
     struct task_struct *task;
     int count = 0;
 
     rcu_read_lock();
 
-    //NOLINTNEXTLINE(clang-analyzer-sizeof-pointer)
+    // NOLINTNEXTLINE(clang-analyzer-sizeof-pointer)
     for_each_process(task) {
         struct pids_snap *local = kmalloc(sizeof(struct pids_snap), GFP_KERNEL);
         if (!local) {
-            continue; // заменить 
+            continue;  // заменить
         }
         local->pid = task->pid;
         llist_add(&local->list, &pids_list);
@@ -109,7 +98,7 @@ static int count_processes(void) {
     rcu_read_unlock();
 
     common_size = count;
-       
+
     return count;
 }
 
@@ -139,39 +128,45 @@ static int create_array(void) {
         i++;
     }
     return 0;
-    
 }
 
-
 static int __init exbin_search_init(void) {
-  pr_info("Init. Example kernel binary search\n");
-  pr_info("Find PID on start module\n");
-  create_array();
-    
-  return 0;
+    pr_info("Init. Example kernel binary search\n");
+    pr_info("Find PID on start module\n");
+    create_array();
+
+    return 0;
 }
 
 static void __exit exbin_search_exit(void) {
-  kfree(array);
-  free_pid_list();
-  pr_info("Exit.\n");
+    kfree(array);
+    free_pid_list();
+    pr_info("Exit.\n");
 }
 static int get_put(char *buffer, const struct kernel_param *kp) {
     strncpy(buffer, output_string, strlen(output_string));
     return strlen(output_string);
 }
 
+static int set_pid_for_search(const char *value,
+                              const struct kernel_param *kp) {
+    return 0;
+}
+
+static int current_get_pid(char *buffer, const struct kernel_param *kp) {
+
+    return scnprintf(buffer, MAX_INPUT_STR, "%s", output_string);
+}
+
 static const struct kernel_param_ops output_param = {
-    .get = get_put,
-    .set = NULL,
+    .get = current_get_pid,
 };
 
-module_param_cb(output_string, &output_param, &output_string, 0444);
-MODULE_PARM_DESC(get_put, "Find PID");
+module_param_cb(output_string, &output_param, NULL, 0444);
+MODULE_PARM_DESC(output_string, "Find PID");
 
-module_param_cb(extern_pid, &search_pid, &extern_pid, 0660);
+module_param_cb(extern_pid, &search_pid, NULL, 0660);
 MODULE_PARM_DESC(extern_pid, "PID for search");
-
 
 module_init(exbin_search_init);
 module_exit(exbin_search_exit);
