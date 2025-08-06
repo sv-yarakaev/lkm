@@ -1,5 +1,9 @@
 MODULE := $(notdir $(CURDIR))
 
+
+ccflags-y += -I$(src)/../utils
+
+
 obj-m += ex_rb_tree.o
 ex_rb_tree-objs := src/ex_rb_tree.o
 

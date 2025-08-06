@@ -15,4 +15,11 @@ clean:
 		$(MAKE) -C $$dir clean; \
 	done
 
+
+compile_commands.json:
+	bear --make
+
+cc: compile_commands.json
+	@echo "compile_commands.json generated"
+
 .PHONY: all clean
