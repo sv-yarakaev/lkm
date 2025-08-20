@@ -10,13 +10,13 @@
 
 #include <linux/printk.h>
 #include "asm-generic/errno-base.h"
-#include "random_values.h"
 
+/*
 struct task_snap {
     pid_t pid;
     struct mm_struct *mm;
     struct list_head list;    
-};
+}; */
 
 struct mm_pid_node {
     struct rb_node node;
@@ -24,15 +24,74 @@ struct mm_pid_node {
     pid_t pid;
 };
 
+
 struct mm_pid_tree {
     struct rb_root root;      
 };
+struct mm_pid_tree local_rb_tree; //
 
+
+
+int mm_pid_tree_insert(struct mm_pid_tree *tree, pid_t pid, struct mm_struct *mm);
+void mm_pid_tree_free(struct mm_pid_tree *tree);
+//возможно удалить
 static inline void mm_pid_tree_init(struct mm_pid_tree *tree)
 {
     tree->root = RB_ROOT;
 }
 
+void mm_pid_tree_free(struct mm_pid_tree *tree)
+{
+    struct rb_node *node = rb_first(&tree->root);
+    struct mm_pid_node *node_ptr;
+
+    while (node) {
+        node_ptr = rb_entry(node, struct mm_pid_node, node);
+        node = rb_next(node);
+        rb_erase(&node_ptr->node, &tree->root);
+        mmput(node_ptr->mm);
+        kfree(node_ptr);
+    }
+
+    tree->root = RB_ROOT;
+}
+
+
+
+int mm_pid_tree_insert(struct mm_pid_tree *tree, pid_t pid, struct mm_struct *mm)
+{
+    struct mm_pid_node *new_node;
+    struct rb_node **link = &tree->root.rb_node, *parent = NULL;
+    struct mm_pid_node *current_node;
+
+    new_node = kmalloc(sizeof(struct mm_pid_node), GFP_KERNEL);
+    if (!new_node)
+        return -ENOMEM;
+
+    new_node->pid = pid;
+    new_node->mm = mm;
+
+    while (*link) {
+        parent = *link;
+        current_node = rb_entry(parent, struct mm_pid_node, node);
+
+        if (pid < current->pid)
+            link = &parent->rb_left;
+        else if (pid > current->pid)
+            link = &parent->rb_right;
+        else
+            goto error_duplicate; 
+    }
+
+    rb_link_node(&new_node->node, parent, link);
+    rb_insert_color(&new_node->node, &tree->root);
+
+    return 0;
+
+error_duplicate:
+    kfree(new_node);
+    return -EEXIST;
+}
 
 
 
@@ -41,21 +100,17 @@ static LIST_HEAD(task_snap_head);
 static int take_task_snap(void)
 {
     struct task_struct *task;
-    struct task_snap *snap;
-    
+    //struct task_snap *snap;
+    int ret;
+     
     rcu_read_lock();
     for_each_process(task) {
-        snap = kmalloc(sizeof(*snap), GFP_ATOMIC);
-        if (!snap) {
-            rcu_read_unlock();
-            return -ENOMEM;
+        if (task->mm) {
+            pr_info("Insert task: %s: %d to rb tree\n", task->comm, task->pid);
+            ret = mm_pid_tree_insert(&local_rb_tree, task->pid, task->mm);
         }
-        
-        snap->pid = task->pid;
-        snap->mm = task->mm;
-        
-        list_add(&snap->list, &task_snap_head);
     }
+    
     rcu_read_unlock();
     
     return 0;
@@ -76,6 +131,7 @@ static int ex_rb_init(void) {
 
 static void ex_rb_exit(void) {
 //    kfree(task_snap);
+    mm_pid_tree_free(&local_rb_tree);
     pr_info("Bb!");
 }
 
