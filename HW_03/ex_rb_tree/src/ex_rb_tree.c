@@ -42,18 +42,33 @@ static inline void mm_pid_tree_init(struct mm_pid_tree *tree)
 
 void mm_pid_tree_free(struct mm_pid_tree *tree)
 {
-    struct rb_node *node = rb_first(&tree->root);
-    struct mm_pid_node *node_ptr;
+    struct rb_node *node;
 
-    while (node) {
-        node_ptr = rb_entry(node, struct mm_pid_node, node);
-        node = rb_next(node);
-        rb_erase(&node_ptr->node, &tree->root);
-        mmput(node_ptr->mm);
-        kfree(node_ptr);
+    if (RB_EMPTY_ROOT(&tree->root)) {
+        pr_warn("free_rb_tree: tree is already empty\n");
+        return;
     }
 
-    tree->root = RB_ROOT;
+
+    for(node = rb_first(&tree->root); node;) {
+        struct rb_node *next = rb_next(node);
+        struct mm_pid_node *data = rb_entry(node, struct mm_pid_node, node);
+        if (!data) {
+            pr_warn("free_rb_tree: rb_entry returned NULL\n");
+            node = next;
+            continue;
+        }
+        pr_info("free_rb_tree: freeing node pid=%d mm=%p\n",
+                data->pid, data->mm);
+        rb_erase(node, &tree->root);
+        kfree(data);
+        node = next;
+    }
+    if (RB_EMPTY_ROOT(&tree->root))
+        pr_info("free_rb_tree: tree cleanup complete, all nodes freed\n");
+    else
+        pr_warn("free_rb_tree: tree not empty after cleanup!\n");
+
 }
 
 
