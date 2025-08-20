@@ -147,10 +147,11 @@ static int ex_rb_init(void) {
     return 0;
 }
 
-static void ex_rb_exit(void) {
-//    kfree(task_snap);
+static void __exit ex_rb_exit(void) {
+    pr_info("ex_rb_exit: start cleanup\n");
     mm_pid_tree_free(&local_rb_tree);
-    pr_info("Bb!");
+    pr_info("ex_rb_exit: after free\n");
+    pr_info("Bb!\n");
 }
 
 
