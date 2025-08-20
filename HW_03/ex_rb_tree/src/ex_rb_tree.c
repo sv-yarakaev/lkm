@@ -90,9 +90,9 @@ int mm_pid_tree_insert(struct mm_pid_tree *tree, pid_t pid, struct mm_struct *mm
         parent = *link;
         current_node = rb_entry(parent, struct mm_pid_node, node);
 
-        if (pid < current->pid)
+        if (pid < current_node->pid)
             link = &parent->rb_left;
-        else if (pid > current->pid)
+        else if (pid > current_node->pid)
             link = &parent->rb_right;
         else
             goto error_duplicate; 
@@ -134,6 +134,9 @@ static int take_task_snap(void)
 
 
 static int ex_rb_init(void) {
+    
+    mm_pid_tree_init(&local_rb_tree);   
+    
     if (!take_task_snap()) {
         pr_info("Take partial snap is succesfull\n");
     } else {
