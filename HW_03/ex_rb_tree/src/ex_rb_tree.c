@@ -1,15 +1,13 @@
-
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/sched.h>     // task_struct
-#include <linux/mm.h>        // vm_area_struct, mm_struct
-#include <linux/mm_types.h>  // mmap_lock
-#include <linux/kthread.h>   // Для примера с потоком
+#include <linux/sched.h>     
+#include <linux/mm.h>        
+#include <linux/mm_types.h>  
 #include <linux/rbtree.h>
 
 
 #include <linux/printk.h>
-#include "asm-generic/errno-base.h"
 
 /*
 struct task_snap {
