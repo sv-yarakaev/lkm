@@ -22,6 +22,7 @@ static char get_random_visible_char(void) {
     }
 }
 
+__attribute__((unused))
 static char* create_random_id(const u8 length) {
   
   if (length == 0 || length > 255) {  

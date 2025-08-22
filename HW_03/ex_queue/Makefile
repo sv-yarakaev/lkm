@@ -1,5 +1,6 @@
 MODULE := $(notdir $(CURDIR))
 
+ccflags-y += -I$(src)/../utils
 # ex_list/Makefile
 obj-m += ex_queue.o
 ex_queue-objs := src/ex_queue.o
