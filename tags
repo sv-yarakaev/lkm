@@ -8,6 +8,7 @@
 !_TAG_FIELD_DESCRIPTION	name	/tag name/
 !_TAG_FIELD_DESCRIPTION	pattern	/pattern/
 !_TAG_FIELD_DESCRIPTION	typeref	/Type and name of a variable or typedef/
+!_TAG_FIELD_DESCRIPTION!C++	name	/aliased names/
 !_TAG_FIELD_DESCRIPTION!Python	nameref	/the original name for the tag/
 !_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
 !_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
@@ -21,6 +22,18 @@
 !_TAG_KIND_DESCRIPTION!C	t,typedef	/typedefs/
 !_TAG_KIND_DESCRIPTION!C	u,union	/union names/
 !_TAG_KIND_DESCRIPTION!C	v,variable	/variable definitions/
+!_TAG_KIND_DESCRIPTION!C++	c,class	/classes/
+!_TAG_KIND_DESCRIPTION!C++	d,macro	/macro definitions/
+!_TAG_KIND_DESCRIPTION!C++	e,enumerator	/enumerators (values inside an enumeration)/
+!_TAG_KIND_DESCRIPTION!C++	f,function	/function definitions/
+!_TAG_KIND_DESCRIPTION!C++	g,enum	/enumeration names/
+!_TAG_KIND_DESCRIPTION!C++	h,header	/included header files/
+!_TAG_KIND_DESCRIPTION!C++	m,member	/class, struct, and union members/
+!_TAG_KIND_DESCRIPTION!C++	n,namespace	/namespaces/
+!_TAG_KIND_DESCRIPTION!C++	s,struct	/structure names/
+!_TAG_KIND_DESCRIPTION!C++	t,typedef	/typedefs/
+!_TAG_KIND_DESCRIPTION!C++	u,union	/union names/
+!_TAG_KIND_DESCRIPTION!C++	v,variable	/variable definitions/
 !_TAG_KIND_DESCRIPTION!DTD	E,entity	/entities/
 !_TAG_KIND_DESCRIPTION!DTD	a,attribute	/attributes/
 !_TAG_KIND_DESCRIPTION!DTD	e,element	/elements/
@@ -28,6 +41,12 @@
 !_TAG_KIND_DESCRIPTION!DTD	p,parameterEntity	/parameter entities/
 !_TAG_KIND_DESCRIPTION!DosBatch	l,label	/labels/
 !_TAG_KIND_DESCRIPTION!DosBatch	v,variable	/variables/
+!_TAG_KIND_DESCRIPTION!JSON	a,array	/arrays/
+!_TAG_KIND_DESCRIPTION!JSON	b,boolean	/booleans/
+!_TAG_KIND_DESCRIPTION!JSON	n,number	/numbers/
+!_TAG_KIND_DESCRIPTION!JSON	o,object	/objects/
+!_TAG_KIND_DESCRIPTION!JSON	s,string	/strings/
+!_TAG_KIND_DESCRIPTION!JSON	z,null	/nulls/
 !_TAG_KIND_DESCRIPTION!Make	I,makefile	/makefiles/
 !_TAG_KIND_DESCRIPTION!Make	m,macro	/macros/
 !_TAG_KIND_DESCRIPTION!Make	t,target	/targets/
@@ -46,9 +65,11 @@
 !_TAG_OUTPUT_FILESEP	slash	/slash or backslash/
 !_TAG_OUTPUT_MODE	u-ctags	/u-ctags or e-ctags/
 !_TAG_OUTPUT_VERSION	0.0	/current.age/
-!_TAG_PARSER_VERSION!C	0.0	/current.age/
+!_TAG_PARSER_VERSION!C	1.1	/current.age/
+!_TAG_PARSER_VERSION!C++	1.1	/current.age/
 !_TAG_PARSER_VERSION!DTD	0.0	/current.age/
 !_TAG_PARSER_VERSION!DosBatch	0.0	/current.age/
+!_TAG_PARSER_VERSION!JSON	0.0	/current.age/
 !_TAG_PARSER_VERSION!Make	0.0	/current.age/
 !_TAG_PARSER_VERSION!Python	0.0	/current.age/
 !_TAG_PARSER_VERSION!Sh	0.0	/current.age/
@@ -57,10 +78,15 @@
 !_TAG_PROGRAM_AUTHOR	Universal Ctags Team	//
 !_TAG_PROGRAM_NAME	Universal Ctags	/Derived from Exuberant Ctags/
 !_TAG_PROGRAM_URL	https://ctags.io/	/official site/
-!_TAG_PROGRAM_VERSION	6.0.0	//
+!_TAG_PROGRAM_VERSION	6.1.0	//
+!_TAG_ROLE_DESCRIPTION!C!function	foreigndecl	/declared in foreign languages/
 !_TAG_ROLE_DESCRIPTION!C!header	local	/local header/
 !_TAG_ROLE_DESCRIPTION!C!header	system	/system header/
 !_TAG_ROLE_DESCRIPTION!C!macro	undef	/undefined/
+!_TAG_ROLE_DESCRIPTION!C!struct	foreigndecl	/declared in foreign languages/
+!_TAG_ROLE_DESCRIPTION!C++!header	local	/local header/
+!_TAG_ROLE_DESCRIPTION!C++!header	system	/system header/
+!_TAG_ROLE_DESCRIPTION!C++!macro	undef	/undefined/
 !_TAG_ROLE_DESCRIPTION!DTD!element	attOwner	/attributes owner/
 !_TAG_ROLE_DESCRIPTION!DTD!parameterEntity	condition	/conditions/
 !_TAG_ROLE_DESCRIPTION!DTD!parameterEntity	elementName	/element names/
@@ -74,54 +100,511 @@
 !_TAG_ROLE_DESCRIPTION!Python!unknown	indirectlyImported	/classes\/variables\/functions\/modules imported in alternative name/
 !_TAG_ROLE_DESCRIPTION!Sh!heredoc	endmarker	/end marker/
 !_TAG_ROLE_DESCRIPTION!Sh!script	loaded	/loaded/
+0	HW_03/.vscode/tasks.json	/^                "CC=gcc",              \/\/ Используем GCC$/;"	s	array:tasks.0.args
+0	HW_03/.vscode/tasks.json	/^            "problemMatcher": ["$gcc"],  \/\/ Парсинг ошибок GCC$/;"	s	array:tasks.0.problemMatcher
+0	HW_03/.vscode/tasks.json	/^        {$/;"	o	array:tasks
+0	compile_commands.json	/^      "\/usr\/bin\/gcc",$/;"	s	array:0.arguments
+0	compile_commands.json	/^      "\/usr\/bin\/gcc",$/;"	s	array:1.arguments
+0	compile_commands.json	/^      "\/usr\/bin\/gcc",$/;"	s	array:2.arguments
+0	compile_commands.json	/^  {$/;"	o
+1	HW_03/.vscode/tasks.json	/^                "CC=gcc",              \/\/ Используем GCC$/;"	z	array:tasks.0.args
+1	compile_commands.json	/^      "-Wp,-MMD,.\/..module-common.o.d",$/;"	s	array:2.arguments
+1	compile_commands.json	/^      "-Wp,-MMD,.\/.ex_list.mod.o.d",$/;"	s	array:1.arguments
+1	compile_commands.json	/^      "-Wp,-MMD,src\/.ex_list.o.d",$/;"	s	array:0.arguments
+1	compile_commands.json	/^  {$/;"	o
+10	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/generated\/uapi",$/;"	s	array:0.arguments
+10	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/generated\/uapi",$/;"	s	array:1.arguments
+10	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/generated\/uapi",$/;"	s	array:2.arguments
+100	compile_commands.json	/^      "-Wno-unused-but-set-variable",$/;"	s	array:1.arguments
+100	compile_commands.json	/^      "-Wno-unused-but-set-variable",$/;"	s	array:2.arguments
+100	compile_commands.json	/^      "-Wunused",$/;"	s	array:0.arguments
+101	compile_commands.json	/^      "-Wno-unused-but-set-variable",$/;"	s	array:0.arguments
+101	compile_commands.json	/^      "-Wno-unused-const-variable",$/;"	s	array:1.arguments
+101	compile_commands.json	/^      "-Wno-unused-const-variable",$/;"	s	array:2.arguments
+102	compile_commands.json	/^      "-Wno-packed-not-aligned",$/;"	s	array:1.arguments
+102	compile_commands.json	/^      "-Wno-packed-not-aligned",$/;"	s	array:2.arguments
+102	compile_commands.json	/^      "-Wno-unused-const-variable",$/;"	s	array:0.arguments
+103	compile_commands.json	/^      "-Wno-format-overflow",$/;"	s	array:1.arguments
+103	compile_commands.json	/^      "-Wno-format-overflow",$/;"	s	array:2.arguments
+103	compile_commands.json	/^      "-Wno-packed-not-aligned",$/;"	s	array:0.arguments
+104	compile_commands.json	/^      "-Wno-format-overflow",$/;"	s	array:0.arguments
+104	compile_commands.json	/^      "-Wno-format-truncation",$/;"	s	array:1.arguments
+104	compile_commands.json	/^      "-Wno-format-truncation",$/;"	s	array:2.arguments
+105	compile_commands.json	/^      "-Wno-format-truncation",$/;"	s	array:0.arguments
+105	compile_commands.json	/^      "-Wno-stringop-truncation",$/;"	s	array:1.arguments
+105	compile_commands.json	/^      "-Wno-stringop-truncation",$/;"	s	array:2.arguments
+106	compile_commands.json	/^      "-Wno-override-init",$/;"	s	array:1.arguments
+106	compile_commands.json	/^      "-Wno-override-init",$/;"	s	array:2.arguments
+106	compile_commands.json	/^      "-Wno-stringop-truncation",$/;"	s	array:0.arguments
+107	compile_commands.json	/^      "-Wno-missing-field-initializers",$/;"	s	array:1.arguments
+107	compile_commands.json	/^      "-Wno-missing-field-initializers",$/;"	s	array:2.arguments
+107	compile_commands.json	/^      "-Wno-override-init",$/;"	s	array:0.arguments
+108	compile_commands.json	/^      "-Wno-missing-field-initializers",$/;"	s	array:0.arguments
+108	compile_commands.json	/^      "-Wno-type-limits",$/;"	s	array:1.arguments
+108	compile_commands.json	/^      "-Wno-type-limits",$/;"	s	array:2.arguments
+109	compile_commands.json	/^      "-Wno-shift-negative-value",$/;"	s	array:1.arguments
+109	compile_commands.json	/^      "-Wno-shift-negative-value",$/;"	s	array:2.arguments
+109	compile_commands.json	/^      "-Wno-type-limits",$/;"	s	array:0.arguments
+11	compile_commands.json	/^      "-include",$/;"	s	array:0.arguments
+11	compile_commands.json	/^      "-include",$/;"	s	array:1.arguments
+11	compile_commands.json	/^      "-include",$/;"	s	array:2.arguments
+110	compile_commands.json	/^      "-Wno-maybe-uninitialized",$/;"	s	array:1.arguments
+110	compile_commands.json	/^      "-Wno-maybe-uninitialized",$/;"	s	array:2.arguments
+110	compile_commands.json	/^      "-Wno-shift-negative-value",$/;"	s	array:0.arguments
+111	compile_commands.json	/^      "-Wno-maybe-uninitialized",$/;"	s	array:0.arguments
+111	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:1.arguments
+111	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:2.arguments
+112	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:0.arguments
+112	compile_commands.json	/^      "-Wno-unused-parameter",$/;"	s	array:1.arguments
+112	compile_commands.json	/^      "-Wno-unused-parameter",$/;"	s	array:2.arguments
+113	compile_commands.json	/^      "-Wno-unused-parameter",$/;"	s	array:0.arguments
+113	compile_commands.json	/^      "-g",$/;"	s	array:1.arguments
+113	compile_commands.json	/^      "-g",$/;"	s	array:2.arguments
+114	compile_commands.json	/^      "-fsanitize=bounds-strict",$/;"	s	array:1.arguments
+114	compile_commands.json	/^      "-fsanitize=bounds-strict",$/;"	s	array:2.arguments
+114	compile_commands.json	/^      "-g",$/;"	s	array:0.arguments
+115	compile_commands.json	/^      "-fsanitize=bounds-strict",$/;"	s	array:0.arguments
+115	compile_commands.json	/^      "-fsanitize=shift",$/;"	s	array:1.arguments
+115	compile_commands.json	/^      "-fsanitize=shift",$/;"	s	array:2.arguments
+116	compile_commands.json	/^      "-DMODULE",$/;"	s	array:1.arguments
+116	compile_commands.json	/^      "-DMODULE",$/;"	s	array:2.arguments
+116	compile_commands.json	/^      "-fsanitize=shift",$/;"	s	array:0.arguments
+117	compile_commands.json	/^      "-DKBUILD_BASENAME=\\".module_common\\"",$/;"	s	array:2.arguments
+117	compile_commands.json	/^      "-DKBUILD_BASENAME=\\"ex_list.mod\\"",$/;"	s	array:1.arguments
+117	compile_commands.json	/^      "-DMODULE",$/;"	s	array:0.arguments
+118	compile_commands.json	/^      "-DKBUILD_BASENAME=\\"ex_list\\"",$/;"	s	array:0.arguments
+118	compile_commands.json	/^      "-DKBUILD_MODNAME=\\".module_common.o\\"",$/;"	s	array:2.arguments
+118	compile_commands.json	/^      "-DKBUILD_MODNAME=\\"ex_list\\"",$/;"	s	array:1.arguments
+119	compile_commands.json	/^      "-DKBUILD_MODNAME=\\"ex_list\\"",$/;"	s	array:0.arguments
+119	compile_commands.json	/^      "-D__KBUILD_MODNAME=kmod_.module_common.o",$/;"	s	array:2.arguments
+119	compile_commands.json	/^      "-D__KBUILD_MODNAME=kmod_ex_list",$/;"	s	array:1.arguments
+12	compile_commands.json	/^      "-Iutils",$/;"	s	array:0.arguments
+12	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler-version.h",$/;"	s	array:1.arguments
+12	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler-version.h",$/;"	s	array:2.arguments
+120	compile_commands.json	/^      "-D__KBUILD_MODNAME=kmod_ex_list",$/;"	s	array:0.arguments
+120	compile_commands.json	/^      "-c",$/;"	s	array:1.arguments
+120	compile_commands.json	/^      "-c",$/;"	s	array:2.arguments
+121	compile_commands.json	/^      "-c",$/;"	s	array:0.arguments
+121	compile_commands.json	/^      "-o",$/;"	s	array:1.arguments
+121	compile_commands.json	/^      "-o",$/;"	s	array:2.arguments
+122	compile_commands.json	/^      "-o",$/;"	s	array:0.arguments
+122	compile_commands.json	/^      ".module-common.o",$/;"	s	array:2.arguments
+122	compile_commands.json	/^      "ex_list.mod.o",$/;"	s	array:1.arguments
+123	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/scripts\/module-common.c"$/;"	s	array:2.arguments
+123	compile_commands.json	/^      "ex_list.mod.c"$/;"	s	array:1.arguments
+123	compile_commands.json	/^      "src\/ex_list.o",$/;"	s	array:0.arguments
+124	compile_commands.json	/^      "src\/ex_list.c"$/;"	s	array:0.arguments
+13	compile_commands.json	/^      "-include",$/;"	s	array:1.arguments
+13	compile_commands.json	/^      "-include",$/;"	s	array:2.arguments
+13	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler-version.h",$/;"	s	array:0.arguments
+14	compile_commands.json	/^      "-include",$/;"	s	array:0.arguments
+14	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/kconfig.h",$/;"	s	array:1.arguments
+14	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/kconfig.h",$/;"	s	array:2.arguments
+15	compile_commands.json	/^      "-include",$/;"	s	array:1.arguments
+15	compile_commands.json	/^      "-include",$/;"	s	array:2.arguments
+15	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/kconfig.h",$/;"	s	array:0.arguments
+16	compile_commands.json	/^      "-include",$/;"	s	array:0.arguments
+16	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler_types.h",$/;"	s	array:1.arguments
+16	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler_types.h",$/;"	s	array:2.arguments
+17	compile_commands.json	/^      "-D__KERNEL__",$/;"	s	array:1.arguments
+17	compile_commands.json	/^      "-D__KERNEL__",$/;"	s	array:2.arguments
+17	compile_commands.json	/^      "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/linux\/compiler_types.h",$/;"	s	array:0.arguments
+18	compile_commands.json	/^      "-D__KERNEL__",$/;"	s	array:0.arguments
+18	compile_commands.json	/^      "-std=gnu11",$/;"	s	array:1.arguments
+18	compile_commands.json	/^      "-std=gnu11",$/;"	s	array:2.arguments
+19	compile_commands.json	/^      "-fshort-wchar",$/;"	s	array:1.arguments
+19	compile_commands.json	/^      "-fshort-wchar",$/;"	s	array:2.arguments
+19	compile_commands.json	/^      "-std=gnu11",$/;"	s	array:0.arguments
+2	HW_03/.vscode/tasks.json	/^                "CFLAGS=-fanalyzer",    \/\/ Включаем статический анализ$/;"	z	array:tasks.0.args
+2	compile_commands.json	/^      "-nostdinc",$/;"	s	array:0.arguments
+2	compile_commands.json	/^      "-nostdinc",$/;"	s	array:1.arguments
+2	compile_commands.json	/^      "-nostdinc",$/;"	s	array:2.arguments
+2	compile_commands.json	/^  {$/;"	o
+20	compile_commands.json	/^      "-fshort-wchar",$/;"	s	array:0.arguments
+20	compile_commands.json	/^      "-funsigned-char",$/;"	s	array:1.arguments
+20	compile_commands.json	/^      "-funsigned-char",$/;"	s	array:2.arguments
+21	compile_commands.json	/^      "-fno-common",$/;"	s	array:1.arguments
+21	compile_commands.json	/^      "-fno-common",$/;"	s	array:2.arguments
+21	compile_commands.json	/^      "-funsigned-char",$/;"	s	array:0.arguments
+22	compile_commands.json	/^      "-fno-PIE",$/;"	s	array:1.arguments
+22	compile_commands.json	/^      "-fno-PIE",$/;"	s	array:2.arguments
+22	compile_commands.json	/^      "-fno-common",$/;"	s	array:0.arguments
+23	compile_commands.json	/^      "-fno-PIE",$/;"	s	array:0.arguments
+23	compile_commands.json	/^      "-fno-strict-aliasing",$/;"	s	array:1.arguments
+23	compile_commands.json	/^      "-fno-strict-aliasing",$/;"	s	array:2.arguments
+24	compile_commands.json	/^      "-fno-strict-aliasing",$/;"	s	array:0.arguments
+24	compile_commands.json	/^      "-mno-sse",$/;"	s	array:1.arguments
+24	compile_commands.json	/^      "-mno-sse",$/;"	s	array:2.arguments
+25	compile_commands.json	/^      "-mno-mmx",$/;"	s	array:1.arguments
+25	compile_commands.json	/^      "-mno-mmx",$/;"	s	array:2.arguments
+25	compile_commands.json	/^      "-mno-sse",$/;"	s	array:0.arguments
+26	compile_commands.json	/^      "-mno-mmx",$/;"	s	array:0.arguments
+26	compile_commands.json	/^      "-mno-sse2",$/;"	s	array:1.arguments
+26	compile_commands.json	/^      "-mno-sse2",$/;"	s	array:2.arguments
+27	compile_commands.json	/^      "-mno-3dnow",$/;"	s	array:1.arguments
+27	compile_commands.json	/^      "-mno-3dnow",$/;"	s	array:2.arguments
+27	compile_commands.json	/^      "-mno-sse2",$/;"	s	array:0.arguments
+28	compile_commands.json	/^      "-mno-3dnow",$/;"	s	array:0.arguments
+28	compile_commands.json	/^      "-mno-avx",$/;"	s	array:1.arguments
+28	compile_commands.json	/^      "-mno-avx",$/;"	s	array:2.arguments
+29	compile_commands.json	/^      "-fcf-protection=branch",$/;"	s	array:1.arguments
+29	compile_commands.json	/^      "-fcf-protection=branch",$/;"	s	array:2.arguments
+29	compile_commands.json	/^      "-mno-avx",$/;"	s	array:0.arguments
+3	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include",$/;"	s	array:0.arguments
+3	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include",$/;"	s	array:1.arguments
+3	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include",$/;"	s	array:2.arguments
+30	compile_commands.json	/^      "-fcf-protection=branch",$/;"	s	array:0.arguments
+30	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:1.arguments
+30	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:2.arguments
+31	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:0.arguments
+31	compile_commands.json	/^      "-m64",$/;"	s	array:1.arguments
+31	compile_commands.json	/^      "-m64",$/;"	s	array:2.arguments
+32	compile_commands.json	/^      "-falign-jumps=1",$/;"	s	array:1.arguments
+32	compile_commands.json	/^      "-falign-jumps=1",$/;"	s	array:2.arguments
+32	compile_commands.json	/^      "-m64",$/;"	s	array:0.arguments
+33	compile_commands.json	/^      "-falign-jumps=1",$/;"	s	array:0.arguments
+33	compile_commands.json	/^      "-falign-loops=1",$/;"	s	array:1.arguments
+33	compile_commands.json	/^      "-falign-loops=1",$/;"	s	array:2.arguments
+34	compile_commands.json	/^      "-falign-loops=1",$/;"	s	array:0.arguments
+34	compile_commands.json	/^      "-mno-80387",$/;"	s	array:1.arguments
+34	compile_commands.json	/^      "-mno-80387",$/;"	s	array:2.arguments
+35	compile_commands.json	/^      "-mno-80387",$/;"	s	array:0.arguments
+35	compile_commands.json	/^      "-mno-fp-ret-in-387",$/;"	s	array:1.arguments
+35	compile_commands.json	/^      "-mno-fp-ret-in-387",$/;"	s	array:2.arguments
+36	compile_commands.json	/^      "-mno-fp-ret-in-387",$/;"	s	array:0.arguments
+36	compile_commands.json	/^      "-mpreferred-stack-boundary=3",$/;"	s	array:1.arguments
+36	compile_commands.json	/^      "-mpreferred-stack-boundary=3",$/;"	s	array:2.arguments
+37	compile_commands.json	/^      "-mpreferred-stack-boundary=3",$/;"	s	array:0.arguments
+37	compile_commands.json	/^      "-mskip-rax-setup",$/;"	s	array:1.arguments
+37	compile_commands.json	/^      "-mskip-rax-setup",$/;"	s	array:2.arguments
+38	compile_commands.json	/^      "-march=x86-64",$/;"	s	array:1.arguments
+38	compile_commands.json	/^      "-march=x86-64",$/;"	s	array:2.arguments
+38	compile_commands.json	/^      "-mskip-rax-setup",$/;"	s	array:0.arguments
+39	compile_commands.json	/^      "-march=x86-64",$/;"	s	array:0.arguments
+39	compile_commands.json	/^      "-mtune=generic",$/;"	s	array:1.arguments
+39	compile_commands.json	/^      "-mtune=generic",$/;"	s	array:2.arguments
+4	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated",$/;"	s	array:0.arguments
+4	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated",$/;"	s	array:1.arguments
+4	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated",$/;"	s	array:2.arguments
+40	compile_commands.json	/^      "-mno-red-zone",$/;"	s	array:1.arguments
+40	compile_commands.json	/^      "-mno-red-zone",$/;"	s	array:2.arguments
+40	compile_commands.json	/^      "-mtune=generic",$/;"	s	array:0.arguments
+41	compile_commands.json	/^      "-mcmodel=kernel",$/;"	s	array:1.arguments
+41	compile_commands.json	/^      "-mcmodel=kernel",$/;"	s	array:2.arguments
+41	compile_commands.json	/^      "-mno-red-zone",$/;"	s	array:0.arguments
+42	compile_commands.json	/^      "-mcmodel=kernel",$/;"	s	array:0.arguments
+42	compile_commands.json	/^      "-mstack-protector-guard-reg=gs",$/;"	s	array:1.arguments
+42	compile_commands.json	/^      "-mstack-protector-guard-reg=gs",$/;"	s	array:2.arguments
+43	compile_commands.json	/^      "-mstack-protector-guard-reg=gs",$/;"	s	array:0.arguments
+43	compile_commands.json	/^      "-mstack-protector-guard-symbol=__ref_stack_chk_guard",$/;"	s	array:1.arguments
+43	compile_commands.json	/^      "-mstack-protector-guard-symbol=__ref_stack_chk_guard",$/;"	s	array:2.arguments
+44	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:1.arguments
+44	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:2.arguments
+44	compile_commands.json	/^      "-mstack-protector-guard-symbol=__ref_stack_chk_guard",$/;"	s	array:0.arguments
+45	compile_commands.json	/^      "-Wno-sign-compare",$/;"	s	array:0.arguments
+45	compile_commands.json	/^      "-fno-asynchronous-unwind-tables",$/;"	s	array:1.arguments
+45	compile_commands.json	/^      "-fno-asynchronous-unwind-tables",$/;"	s	array:2.arguments
+46	compile_commands.json	/^      "-fno-asynchronous-unwind-tables",$/;"	s	array:0.arguments
+46	compile_commands.json	/^      "-mindirect-branch=thunk-extern",$/;"	s	array:1.arguments
+46	compile_commands.json	/^      "-mindirect-branch=thunk-extern",$/;"	s	array:2.arguments
+47	compile_commands.json	/^      "-mindirect-branch-register",$/;"	s	array:1.arguments
+47	compile_commands.json	/^      "-mindirect-branch-register",$/;"	s	array:2.arguments
+47	compile_commands.json	/^      "-mindirect-branch=thunk-extern",$/;"	s	array:0.arguments
+48	compile_commands.json	/^      "-mindirect-branch-cs-prefix",$/;"	s	array:1.arguments
+48	compile_commands.json	/^      "-mindirect-branch-cs-prefix",$/;"	s	array:2.arguments
+48	compile_commands.json	/^      "-mindirect-branch-register",$/;"	s	array:0.arguments
+49	compile_commands.json	/^      "-mfunction-return=thunk-extern",$/;"	s	array:1.arguments
+49	compile_commands.json	/^      "-mfunction-return=thunk-extern",$/;"	s	array:2.arguments
+49	compile_commands.json	/^      "-mindirect-branch-cs-prefix",$/;"	s	array:0.arguments
+5	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:0.arguments
+5	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:1.arguments
+5	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:2.arguments
+50	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:1.arguments
+50	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:2.arguments
+50	compile_commands.json	/^      "-mfunction-return=thunk-extern",$/;"	s	array:0.arguments
+51	compile_commands.json	/^      "-fno-jump-tables",$/;"	s	array:0.arguments
+51	compile_commands.json	/^      "-mharden-sls=all",$/;"	s	array:1.arguments
+51	compile_commands.json	/^      "-mharden-sls=all",$/;"	s	array:2.arguments
+52	compile_commands.json	/^      "-fpatchable-function-entry=16,16",$/;"	s	array:1.arguments
+52	compile_commands.json	/^      "-fpatchable-function-entry=16,16",$/;"	s	array:2.arguments
+52	compile_commands.json	/^      "-mharden-sls=all",$/;"	s	array:0.arguments
+53	compile_commands.json	/^      "-fno-delete-null-pointer-checks",$/;"	s	array:1.arguments
+53	compile_commands.json	/^      "-fno-delete-null-pointer-checks",$/;"	s	array:2.arguments
+53	compile_commands.json	/^      "-fpatchable-function-entry=16,16",$/;"	s	array:0.arguments
+54	compile_commands.json	/^      "-O2",$/;"	s	array:1.arguments
+54	compile_commands.json	/^      "-O2",$/;"	s	array:2.arguments
+54	compile_commands.json	/^      "-fno-delete-null-pointer-checks",$/;"	s	array:0.arguments
+55	compile_commands.json	/^      "-O2",$/;"	s	array:0.arguments
+55	compile_commands.json	/^      "-fno-allow-store-data-races",$/;"	s	array:1.arguments
+55	compile_commands.json	/^      "-fno-allow-store-data-races",$/;"	s	array:2.arguments
+56	compile_commands.json	/^      "-fno-allow-store-data-races",$/;"	s	array:0.arguments
+56	compile_commands.json	/^      "-fstack-protector-strong",$/;"	s	array:1.arguments
+56	compile_commands.json	/^      "-fstack-protector-strong",$/;"	s	array:2.arguments
+57	compile_commands.json	/^      "-fstack-protector-strong",$/;"	s	array:0.arguments
+57	compile_commands.json	/^      "-ftrivial-auto-var-init=zero",$/;"	s	array:1.arguments
+57	compile_commands.json	/^      "-ftrivial-auto-var-init=zero",$/;"	s	array:2.arguments
+58	compile_commands.json	/^      "-ftrivial-auto-var-init=zero",$/;"	s	array:0.arguments
+58	compile_commands.json	/^      "-fzero-init-padding-bits=all",$/;"	s	array:1.arguments
+58	compile_commands.json	/^      "-fzero-init-padding-bits=all",$/;"	s	array:2.arguments
+59	compile_commands.json	/^      "-fno-stack-clash-protection",$/;"	s	array:1.arguments
+59	compile_commands.json	/^      "-fno-stack-clash-protection",$/;"	s	array:2.arguments
+59	compile_commands.json	/^      "-fzero-init-padding-bits=all",$/;"	s	array:0.arguments
+6	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:0.arguments
+6	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:1.arguments
+6	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include",$/;"	s	array:2.arguments
+60	compile_commands.json	/^      "-fno-stack-clash-protection",$/;"	s	array:0.arguments
+60	compile_commands.json	/^      "-pg",$/;"	s	array:1.arguments
+60	compile_commands.json	/^      "-pg",$/;"	s	array:2.arguments
+61	compile_commands.json	/^      "-mrecord-mcount",$/;"	s	array:1.arguments
+61	compile_commands.json	/^      "-mrecord-mcount",$/;"	s	array:2.arguments
+61	compile_commands.json	/^      "-pg",$/;"	s	array:0.arguments
+62	compile_commands.json	/^      "-mfentry",$/;"	s	array:1.arguments
+62	compile_commands.json	/^      "-mfentry",$/;"	s	array:2.arguments
+62	compile_commands.json	/^      "-mrecord-mcount",$/;"	s	array:0.arguments
+63	compile_commands.json	/^      "-DCC_USING_FENTRY",$/;"	s	array:1.arguments
+63	compile_commands.json	/^      "-DCC_USING_FENTRY",$/;"	s	array:2.arguments
+63	compile_commands.json	/^      "-mfentry",$/;"	s	array:0.arguments
+64	compile_commands.json	/^      "-DCC_USING_FENTRY",$/;"	s	array:0.arguments
+64	compile_commands.json	/^      "-fno-inline-functions-called-once",$/;"	s	array:1.arguments
+64	compile_commands.json	/^      "-fno-inline-functions-called-once",$/;"	s	array:2.arguments
+65	compile_commands.json	/^      "-fmin-function-alignment=16",$/;"	s	array:1.arguments
+65	compile_commands.json	/^      "-fmin-function-alignment=16",$/;"	s	array:2.arguments
+65	compile_commands.json	/^      "-fno-inline-functions-called-once",$/;"	s	array:0.arguments
+66	compile_commands.json	/^      "-fmin-function-alignment=16",$/;"	s	array:0.arguments
+66	compile_commands.json	/^      "-fstrict-flex-arrays=3",$/;"	s	array:1.arguments
+66	compile_commands.json	/^      "-fstrict-flex-arrays=3",$/;"	s	array:2.arguments
+67	compile_commands.json	/^      "-fno-strict-overflow",$/;"	s	array:1.arguments
+67	compile_commands.json	/^      "-fno-strict-overflow",$/;"	s	array:2.arguments
+67	compile_commands.json	/^      "-fstrict-flex-arrays=3",$/;"	s	array:0.arguments
+68	compile_commands.json	/^      "-fno-stack-check",$/;"	s	array:1.arguments
+68	compile_commands.json	/^      "-fno-stack-check",$/;"	s	array:2.arguments
+68	compile_commands.json	/^      "-fno-strict-overflow",$/;"	s	array:0.arguments
+69	compile_commands.json	/^      "-fconserve-stack",$/;"	s	array:1.arguments
+69	compile_commands.json	/^      "-fconserve-stack",$/;"	s	array:2.arguments
+69	compile_commands.json	/^      "-fno-stack-check",$/;"	s	array:0.arguments
+7	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/uapi",$/;"	s	array:0.arguments
+7	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/uapi",$/;"	s	array:1.arguments
+7	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/uapi",$/;"	s	array:2.arguments
+70	compile_commands.json	/^      "-fconserve-stack",$/;"	s	array:0.arguments
+70	compile_commands.json	/^      "-fno-builtin-wcslen",$/;"	s	array:1.arguments
+70	compile_commands.json	/^      "-fno-builtin-wcslen",$/;"	s	array:2.arguments
+71	compile_commands.json	/^      "-Wall",$/;"	s	array:1.arguments
+71	compile_commands.json	/^      "-Wall",$/;"	s	array:2.arguments
+71	compile_commands.json	/^      "-fno-builtin-wcslen",$/;"	s	array:0.arguments
+72	compile_commands.json	/^      "-Wall",$/;"	s	array:0.arguments
+72	compile_commands.json	/^      "-Wextra",$/;"	s	array:1.arguments
+72	compile_commands.json	/^      "-Wextra",$/;"	s	array:2.arguments
+73	compile_commands.json	/^      "-Wextra",$/;"	s	array:0.arguments
+73	compile_commands.json	/^      "-Wundef",$/;"	s	array:1.arguments
+73	compile_commands.json	/^      "-Wundef",$/;"	s	array:2.arguments
+74	compile_commands.json	/^      "-Werror=implicit-function-declaration",$/;"	s	array:1.arguments
+74	compile_commands.json	/^      "-Werror=implicit-function-declaration",$/;"	s	array:2.arguments
+74	compile_commands.json	/^      "-Wundef",$/;"	s	array:0.arguments
+75	compile_commands.json	/^      "-Werror=implicit-function-declaration",$/;"	s	array:0.arguments
+75	compile_commands.json	/^      "-Werror=implicit-int",$/;"	s	array:1.arguments
+75	compile_commands.json	/^      "-Werror=implicit-int",$/;"	s	array:2.arguments
+76	compile_commands.json	/^      "-Werror=implicit-int",$/;"	s	array:0.arguments
+76	compile_commands.json	/^      "-Werror=return-type",$/;"	s	array:1.arguments
+76	compile_commands.json	/^      "-Werror=return-type",$/;"	s	array:2.arguments
+77	compile_commands.json	/^      "-Werror=return-type",$/;"	s	array:0.arguments
+77	compile_commands.json	/^      "-Werror=strict-prototypes",$/;"	s	array:1.arguments
+77	compile_commands.json	/^      "-Werror=strict-prototypes",$/;"	s	array:2.arguments
+78	compile_commands.json	/^      "-Werror=strict-prototypes",$/;"	s	array:0.arguments
+78	compile_commands.json	/^      "-Wno-format-security",$/;"	s	array:1.arguments
+78	compile_commands.json	/^      "-Wno-format-security",$/;"	s	array:2.arguments
+79	compile_commands.json	/^      "-Wno-format-security",$/;"	s	array:0.arguments
+79	compile_commands.json	/^      "-Wno-trigraphs",$/;"	s	array:1.arguments
+79	compile_commands.json	/^      "-Wno-trigraphs",$/;"	s	array:2.arguments
+8	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated\/uapi",$/;"	s	array:0.arguments
+8	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated\/uapi",$/;"	s	array:1.arguments
+8	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/arch\/x86\/include\/generated\/uapi",$/;"	s	array:2.arguments
+80	compile_commands.json	/^      "-Wno-frame-address",$/;"	s	array:1.arguments
+80	compile_commands.json	/^      "-Wno-frame-address",$/;"	s	array:2.arguments
+80	compile_commands.json	/^      "-Wno-trigraphs",$/;"	s	array:0.arguments
+81	compile_commands.json	/^      "-Wno-address-of-packed-member",$/;"	s	array:1.arguments
+81	compile_commands.json	/^      "-Wno-address-of-packed-member",$/;"	s	array:2.arguments
+81	compile_commands.json	/^      "-Wno-frame-address",$/;"	s	array:0.arguments
+82	compile_commands.json	/^      "-Wmissing-declarations",$/;"	s	array:1.arguments
+82	compile_commands.json	/^      "-Wmissing-declarations",$/;"	s	array:2.arguments
+82	compile_commands.json	/^      "-Wno-address-of-packed-member",$/;"	s	array:0.arguments
+83	compile_commands.json	/^      "-Wmissing-declarations",$/;"	s	array:0.arguments
+83	compile_commands.json	/^      "-Wmissing-prototypes",$/;"	s	array:1.arguments
+83	compile_commands.json	/^      "-Wmissing-prototypes",$/;"	s	array:2.arguments
+84	compile_commands.json	/^      "-Wframe-larger-than=2048",$/;"	s	array:1.arguments
+84	compile_commands.json	/^      "-Wframe-larger-than=2048",$/;"	s	array:2.arguments
+84	compile_commands.json	/^      "-Wmissing-prototypes",$/;"	s	array:0.arguments
+85	compile_commands.json	/^      "-Wframe-larger-than=2048",$/;"	s	array:0.arguments
+85	compile_commands.json	/^      "-Wno-main",$/;"	s	array:1.arguments
+85	compile_commands.json	/^      "-Wno-main",$/;"	s	array:2.arguments
+86	compile_commands.json	/^      "-Wno-dangling-pointer",$/;"	s	array:1.arguments
+86	compile_commands.json	/^      "-Wno-dangling-pointer",$/;"	s	array:2.arguments
+86	compile_commands.json	/^      "-Wno-main",$/;"	s	array:0.arguments
+87	compile_commands.json	/^      "-Wno-dangling-pointer",$/;"	s	array:0.arguments
+87	compile_commands.json	/^      "-Wvla",$/;"	s	array:1.arguments
+87	compile_commands.json	/^      "-Wvla",$/;"	s	array:2.arguments
+88	compile_commands.json	/^      "-Wno-pointer-sign",$/;"	s	array:1.arguments
+88	compile_commands.json	/^      "-Wno-pointer-sign",$/;"	s	array:2.arguments
+88	compile_commands.json	/^      "-Wvla",$/;"	s	array:0.arguments
+89	compile_commands.json	/^      "-Wcast-function-type",$/;"	s	array:1.arguments
+89	compile_commands.json	/^      "-Wcast-function-type",$/;"	s	array:2.arguments
+89	compile_commands.json	/^      "-Wno-pointer-sign",$/;"	s	array:0.arguments
+9	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/uapi",$/;"	s	array:0.arguments
+9	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/uapi",$/;"	s	array:1.arguments
+9	compile_commands.json	/^      "-I\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/include\/uapi",$/;"	s	array:2.arguments
+90	compile_commands.json	/^      "-Wcast-function-type",$/;"	s	array:0.arguments
+90	compile_commands.json	/^      "-Wno-unterminated-string-initialization",$/;"	s	array:1.arguments
+90	compile_commands.json	/^      "-Wno-unterminated-string-initialization",$/;"	s	array:2.arguments
+91	compile_commands.json	/^      "-Wno-array-bounds",$/;"	s	array:1.arguments
+91	compile_commands.json	/^      "-Wno-array-bounds",$/;"	s	array:2.arguments
+91	compile_commands.json	/^      "-Wno-unterminated-string-initialization",$/;"	s	array:0.arguments
+92	compile_commands.json	/^      "-Wno-array-bounds",$/;"	s	array:0.arguments
+92	compile_commands.json	/^      "-Wno-stringop-overflow",$/;"	s	array:1.arguments
+92	compile_commands.json	/^      "-Wno-stringop-overflow",$/;"	s	array:2.arguments
+93	compile_commands.json	/^      "-Wno-alloc-size-larger-than",$/;"	s	array:1.arguments
+93	compile_commands.json	/^      "-Wno-alloc-size-larger-than",$/;"	s	array:2.arguments
+93	compile_commands.json	/^      "-Wno-stringop-overflow",$/;"	s	array:0.arguments
+94	compile_commands.json	/^      "-Wimplicit-fallthrough=5",$/;"	s	array:1.arguments
+94	compile_commands.json	/^      "-Wimplicit-fallthrough=5",$/;"	s	array:2.arguments
+94	compile_commands.json	/^      "-Wno-alloc-size-larger-than",$/;"	s	array:0.arguments
+95	compile_commands.json	/^      "-Werror=date-time",$/;"	s	array:1.arguments
+95	compile_commands.json	/^      "-Werror=date-time",$/;"	s	array:2.arguments
+95	compile_commands.json	/^      "-Wimplicit-fallthrough=5",$/;"	s	array:0.arguments
+96	compile_commands.json	/^      "-Werror=date-time",$/;"	s	array:0.arguments
+96	compile_commands.json	/^      "-Werror=incompatible-pointer-types",$/;"	s	array:1.arguments
+96	compile_commands.json	/^      "-Werror=incompatible-pointer-types",$/;"	s	array:2.arguments
+97	compile_commands.json	/^      "-Werror=designated-init",$/;"	s	array:1.arguments
+97	compile_commands.json	/^      "-Werror=designated-init",$/;"	s	array:2.arguments
+97	compile_commands.json	/^      "-Werror=incompatible-pointer-types",$/;"	s	array:0.arguments
+98	compile_commands.json	/^      "-Wenum-conversion",$/;"	s	array:1.arguments
+98	compile_commands.json	/^      "-Wenum-conversion",$/;"	s	array:2.arguments
+98	compile_commands.json	/^      "-Werror=designated-init",$/;"	s	array:0.arguments
+99	compile_commands.json	/^      "-Wenum-conversion",$/;"	s	array:0.arguments
+99	compile_commands.json	/^      "-Wunused",$/;"	s	array:1.arguments
+99	compile_commands.json	/^      "-Wunused",$/;"	s	array:2.arguments
 BASE	HW_02_hello_world/check.py	/^BASE = f"\/sys\/module\/{MODULE}\/parameters"$/;"	v
 BUILD_DIR	HW_02_hello_world/Makefile	/^BUILD_DIR := $(PWD)\/build$/;"	m
 CLANG_FORMAT	HW_02_hello_world/Makefile	/^CLANG_FORMAT := clang-format-$(CLANG_FORMAT_VERS)$/;"	m
 CLANG_FORMAT	HW_02_hello_world/src/Makefile	/^CLANG_FORMAT := clang-format-$(CLANG_FORMAT_VERS)$/;"	m
-CLANG_FORMAT_VERS	HW_02_hello_world/Makefile	/^CLANG_FORMAT_VERS ?= 19$/;"	m
-CLANG_FORMAT_VERS	HW_02_hello_world/src/Makefile	/^CLANG_FORMAT_VERS ?= 15$/;"	m
+CLANG_FORMAT_VERS	HW_02_hello_world/Makefile	/^CLANG_FORMAT_VERS ?= 20$/;"	m
+CLANG_FORMAT_VERS	HW_02_hello_world/src/Makefile	/^CLANG_FORMAT_VERS ?= 20$/;"	m
 CURRENT	HW_02_hello_world/src/Makefile	/^CURRENT = $(shell uname -r)$/;"	m
 FORMAT_FILES	HW_02_hello_world/Makefile	/^FORMAT_FILES := $(SRC_DIR)\/*.c$/;"	m
 FORMAT_FILES	HW_02_hello_world/src/Makefile	/^FORMAT_FILES := *.c$/;"	m
+ID	HW_03/ex_list/src/ex_list.c	/^  char *ID;$/;"	m	struct:rnd_list	typeref:typename:char *	file:
 KDIR	HW_02_hello_world/src/Makefile	/^KDIR := \/home\/stv\/kernel\/linux-6.1.130$/;"	m
 KERNEL_DIR	HW_02_hello_world/Makefile	/^KERNEL_DIR ?= \/lib\/modules\/$(KERNEL_VERSION)\/build$/;"	m
 KERNEL_VERSION	HW_02_hello_world/Makefile	/^KERNEL_VERSION ?= $(shell uname -r)$/;"	m
+LENGTH_ID	HW_03/ex_list/src/ex_list.c	/^#define LENGTH_ID /;"	d	file:
+LENGTH_LIST	HW_03/ex_list/src/ex_list.c	/^#define LENGTH_LIST /;"	d	file:
+MAX_INPUT_STR	HW_03/ex_bin_search/src/ex_bin_search.c	/^#define MAX_INPUT_STR /;"	d	file:
 MAX_LEN	HW_02_hello_world/src/ehlo.c	/^#define MAX_LEN /;"	d	file:
 MODULE	HW_02_hello_world/check.py	/^MODULE = "ehlo"$/;"	v
+MODULE	HW_03/ex_bin_search/Makefile	/^MODULE := $(notdir $(CURDIR))$/;"	m
+MODULE	HW_03/ex_list/Makefile	/^MODULE := $(notdir $(CURDIR))$/;"	m
+MODULE	HW_03/ex_rb_tree/Makefile	/^MODULE := $(notdir $(CURDIR))$/;"	m
 MODULE_NAME	HW_02_hello_world/Makefile	/^MODULE_NAME:=ehlo$/;"	m
 MODULE_NAME_WITH_VERSION	HW_02_hello_world/Makefile	/^MODULE_NAME_WITH_VERSION := $(MODULE_NAME)_$(KERNEL_VERSION)$/;"	m
-PATH_CHAR	HW_02_hello_world/check.py	/^PATH_CHAR = f"{BASE}\/char"$/;"	v
-PATH_INDEX	HW_02_hello_world/check.py	/^PATH_INDEX = f"{BASE}\/index"$/;"	v
-PATH_STRING	HW_02_hello_world/check.py	/^PATH_STRING = f"{BASE}\/string"$/;"	v
+PATH_CHAR	HW_02_hello_world/check.py	/^PATH_CHAR = f"{BASE}\/ch_val"$/;"	v
+PATH_INDEX	HW_02_hello_world/check.py	/^PATH_INDEX = f"{BASE}\/idx"$/;"	v
+PATH_STRING	HW_02_hello_world/check.py	/^PATH_STRING = f"{BASE}\/my_str"$/;"	v
 PWD	HW_02_hello_world/Makefile	/^PWD := $(shell pwd)$/;"	m
 PWD	HW_02_hello_world/src/Makefile	/^PWD = $(shell pwd)$/;"	m
 SRC_DIR	HW_02_hello_world/Makefile	/^SRC_DIR := $(PWD)\/src$/;"	m
+SUBDIRS	HW_03/Makefile	/^SUBDIRS := ex_list ex_bin_search ex_rb_tree$/;"	m
 TARGET	HW_02_hello_world/src/Makefile	/^TARGET = ehlo$/;"	m
 all	HW_02_hello_world/src/Makefile	/^all:$/;"	t
-char_get	HW_02_hello_world/src/ehlo.c	/^static int char_get(char *buffer, const struct kernel_param *kp)$/;"	f	typeref:typename:int	file:
+all	HW_03/Makefile	/^all:$/;"	t
+all	HW_03/ex_bin_search/Makefile	/^all:$/;"	t
+all	HW_03/ex_list/Makefile	/^all:$/;"	t
+all	HW_03/ex_rb_tree/Makefile	/^all:$/;"	t
+args	HW_03/.vscode/tasks.json	/^            "args": [$/;"	a	object:tasks.0
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:0
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:1
+arguments	compile_commands.json	/^    "arguments": [$/;"	a	object:2
+array	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int *array = NULL;$/;"	v	typeref:typename:int *	file:
+ch_val	HW_02_hello_world/src/ehlo.c	/^static char ch_val = '\\0';$/;"	v	typeref:typename:char	file:
+char_get	HW_02_hello_world/src/ehlo.c	/^static int char_get(char *buffer, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
 char_ops	HW_02_hello_world/src/ehlo.c	/^static const struct kernel_param_ops char_ops = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
-char_param	HW_02_hello_world/src/ehlo.c	/^static char char_param = '\\0';$/;"	v	typeref:typename:char	file:
-char_set	HW_02_hello_world/src/ehlo.c	/^static int char_set(const char *val, const struct kernel_param *kp)$/;"	f	typeref:typename:int	file:
+char_set	HW_02_hello_world/src/ehlo.c	/^static int char_set(const char *val, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+check	HW_02_hello_world/Makefile	/^check:$/;"	t
 clean	HW_02_hello_world/Makefile	/^clean:$/;"	t
 clean	HW_02_hello_world/src/Makefile	/^clean:$/;"	t
+clean	HW_03/Makefile	/^clean:$/;"	t
+clean	HW_03/ex_bin_search/Makefile	/^clean:$/;"	t
+clean	HW_03/ex_list/Makefile	/^clean:$/;"	t
+clean	HW_03/ex_rb_tree/Makefile	/^clean:$/;"	t
+cleanup_list	HW_03/ex_list/src/ex_list.c	/^static void cleanup_list(void) {$/;"	f	typeref:typename:void	file:
+command	HW_03/.vscode/tasks.json	/^            "command": "make",$/;"	s	object:tasks.0
+common_size	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int common_size;$/;"	v	typeref:typename:int	file:
+compare_pids	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int compare_pids(const void *a, const void *b) {$/;"	f	typeref:typename:int	file:
+count_processes	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int count_processes(void) {$/;"	f	typeref:typename:int	file:
+create_array	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int create_array(void) {$/;"	f	typeref:typename:int	file:
+create_random_id	HW_03/ex_list/src/ex_list.c	/^static char* create_random_id(const u8 length) {$/;"	f	typeref:typename:char *	file:
+create_random_id	HW_03/utils/random_values.h	/^static char* create_random_id(const u8 length) {$/;"	f	typeref:typename:char *
+current_get_pid	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int current_get_pid(char *buffer, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+directory	compile_commands.json	/^    "directory": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list",$/;"	s	object:0
+directory	compile_commands.json	/^    "directory": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list",$/;"	s	object:1
+directory	compile_commands.json	/^    "directory": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list",$/;"	s	object:2
+ehlo_exit	HW_02_hello_world/src/ehlo.c	/^static void __exit ehlo_exit(void) {$/;"	f	typeref:typename:void __exit	file:
+ehlo_init	HW_02_hello_world/src/ehlo.c	/^static int __init ehlo_init(void) {$/;"	f	typeref:typename:int __init	file:
+ex_bin_search-objs	HW_03/ex_bin_search/Makefile	/^ex_bin_search-objs := src\/ex_bin_search.o$/;"	m
+ex_list-objs	HW_03/ex_list/Makefile	/^ex_list-objs := src\/ex_list.o$/;"	m
+ex_rb_exit	HW_03/ex_rb_tree/src/ex_rb_tree.c	/^static void ex_rb_exit(void) {$/;"	f	typeref:typename:void	file:
+ex_rb_init	HW_03/ex_rb_tree/src/ex_rb_tree.c	/^static int ex_rb_init(void) {$/;"	f	typeref:typename:int	file:
+ex_rb_tree-objs	HW_03/ex_rb_tree/Makefile	/^ex_rb_tree-objs := src\/ex_rb_tree.o$/;"	m
+exbin_search_exit	HW_03/ex_bin_search/src/ex_bin_search.c	/^static void __exit exbin_search_exit(void) {$/;"	f	typeref:typename:void __exit	file:
+exbin_search_init	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int __init exbin_search_init(void) {$/;"	f	typeref:typename:int __init	file:
+exlist_exit	HW_03/ex_list/src/ex_list.c	/^static void __exit exlist_exit(void) {$/;"	f	typeref:typename:void __exit	file:
+exlist_init	HW_03/ex_list/src/ex_list.c	/^static int __init exlist_init(void) {$/;"	f	typeref:typename:int __init	file:
+file	compile_commands.json	/^    "file": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list\/ex_list.mod.c",$/;"	s	object:1
+file	compile_commands.json	/^    "file": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list\/src\/ex_list.c",$/;"	s	object:0
+file	compile_commands.json	/^    "file": "\/usr\/src\/kernels\/6.15.3-200.fc42.x86_64\/scripts\/module-common.c",$/;"	s	object:2
+find_pid	HW_03/ex_bin_search/src/ex_bin_search.c	/^char *find_pid = "Find PID= %d ";$/;"	v	typeref:typename:char *
 format	HW_02_hello_world/Makefile	/^format:$/;"	t
 format	HW_02_hello_world/src/Makefile	/^format:$/;"	t
-index	HW_02_hello_world/src/ehlo.c	/^static int index = -1;$/;"	v	typeref:typename:int	file:
-index_get	HW_02_hello_world/src/ehlo.c	/^static int index_get(char *buffer, const struct kernel_param *kp)$/;"	f	typeref:typename:int	file:
-index_ops	HW_02_hello_world/src/ehlo.c	/^static const struct kernel_param_ops index_ops = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
-index_set	HW_02_hello_world/src/ehlo.c	/^static int index_set(const char *val, const struct kernel_param *kp)$/;"	f	typeref:typename:int	file:
+free_pid_list	HW_03/ex_bin_search/src/ex_bin_search.c	/^static void free_pid_list(void) {$/;"	f	typeref:typename:void	file:
+get_random_alnum	HW_03/ex_list/src/ex_list.c	/^static char get_random_alnum(void) {$/;"	f	typeref:typename:char	file:
+get_random_visible_char	HW_03/utils/random_values.h	/^static char get_random_visible_char(void) {$/;"	f	typeref:typename:char
+group	HW_03/.vscode/tasks.json	/^            "group": {$/;"	o	object:tasks.0
+idx	HW_02_hello_world/src/ehlo.c	/^static int idx = -1;$/;"	v	typeref:typename:int	file:
+idx_get	HW_02_hello_world/src/ehlo.c	/^static int idx_get(char *buffer, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+idx_ops	HW_02_hello_world/src/ehlo.c	/^static const struct kernel_param_ops idx_ops = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
+idx_set	HW_02_hello_world/src/ehlo.c	/^static int idx_set(const char *val, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+init_local_list	HW_03/ex_list/src/ex_list.c	/^static int init_local_list(void) {$/;"	f	typeref:typename:int	file:
+isDefault	HW_03/.vscode/tasks.json	/^                "isDefault": true$/;"	b	object:tasks.0.group
+iter	HW_03/ex_list/src/ex_list.c	/^  struct list_head iter;$/;"	m	struct:rnd_list	typeref:struct:list_head	file:
 kbuild	HW_02_hello_world/Makefile	/^kbuild:$/;"	t
-modify_string	HW_02_hello_world/src/ehlo.c	/^static void modify_string(void)$/;"	f	typeref:typename:void	file:
-mymodule_exit	HW_02_hello_world/src/ehlo.c	/^static void __exit mymodule_exit(void)$/;"	f	typeref:typename:void __exit	file:
-mymodule_init	HW_02_hello_world/src/ehlo.c	/^static int __init mymodule_init(void)$/;"	f	typeref:typename:int __init	file:
+kind	HW_03/.vscode/tasks.json	/^                "kind": "build",$/;"	s	object:tasks.0.group
+label	HW_03/.vscode/tasks.json	/^            "label": "HW03",$/;"	s	object:tasks.0
+list	HW_03/ex_bin_search/src/ex_bin_search.c	/^    struct llist_node list;$/;"	m	struct:pids_snap	typeref:struct:llist_node	file:
+modify_my_str	HW_02_hello_world/src/ehlo.c	/^static void modify_my_str(void) {$/;"	f	typeref:typename:void	file:
+my_str	HW_02_hello_world/src/ehlo.c	/^static char my_str[MAX_LEN + 1] = "Default string!";$/;"	v	typeref:typename:char[]	file:
+my_str_get	HW_02_hello_world/src/ehlo.c	/^static int my_str_get(char *buffer, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+my_str_ops	HW_02_hello_world/src/ehlo.c	/^static const struct kernel_param_ops my_str_ops = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
+notfind_pid	HW_03/ex_bin_search/src/ex_bin_search.c	/^const char *notfind_pid = "PID %d not found";$/;"	v	typeref:typename:const char *
 obj-m	HW_02_hello_world/src/Makefile	/^obj-m := $(TARGET).o$/;"	m
+output	compile_commands.json	/^    "output": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list\/.module-common.o"$/;"	s	object:2
+output	compile_commands.json	/^    "output": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list\/ex_list.mod.o"$/;"	s	object:1
+output	compile_commands.json	/^    "output": "\/home\/stv\/pro\/ldd\/lkm\/HW_03\/ex_list\/src\/ex_list.o"$/;"	s	object:0
+output_param	HW_03/ex_bin_search/src/ex_bin_search.c	/^static const struct kernel_param_ops output_param = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
+output_string	HW_03/ex_bin_search/src/ex_bin_search.c	/^static char output_string[MAX_INPUT_STR] = "Enter PID to extern_pid to find";$/;"	v	typeref:typename:char[]	file:
+pid	HW_03/ex_bin_search/src/ex_bin_search.c	/^    int pid;$/;"	m	struct:pids_snap	typeref:typename:int	file:
+pid_search	HW_03/ex_bin_search/src/ex_bin_search.c	/^static int pid_search(const char *val, const struct kernel_param *kp) {$/;"	f	typeref:typename:int	file:
+pids_snap	HW_03/ex_bin_search/src/ex_bin_search.c	/^struct pids_snap {$/;"	s	file:
 pr_fmt	HW_02_hello_world/src/ehlo.c	/^#define pr_fmt(/;"	d	file:
+pr_fmt	HW_03/ex_bin_search/src/ex_bin_search.c	/^#define pr_fmt(/;"	d	file:
+pr_fmt	HW_03/ex_list/src/ex_list.c	/^#define pr_fmt(/;"	d	file:
+problemMatcher	HW_03/.vscode/tasks.json	/^            "problemMatcher": ["$gcc"],  \/\/ Парсинг ошибок GCC$/;"	a	object:tasks.0
 read_string	HW_02_hello_world/check.py	/^def read_string():$/;"	f
+replace_string	HW_02_hello_world/check.py	/^def replace_string(new_str):$/;"	f
+rnd_list	HW_03/ex_list/src/ex_list.c	/^struct rnd_list {$/;"	s	file:
+search_pid	HW_03/ex_bin_search/src/ex_bin_search.c	/^static const struct kernel_param_ops search_pid = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
 set_config	HW_01_build_kernel/update_config.sh	/^set_config() {$/;"	f
-string	HW_02_hello_world/src/ehlo.c	/^static char string[MAX_LEN + 1] = "Default string!";$/;"	v	typeref:typename:char[]	file:
-string_get	HW_02_hello_world/src/ehlo.c	/^static int string_get(char *buffer, const struct kernel_param *kp)$/;"	f	typeref:typename:int	file:
-string_ops	HW_02_hello_world/src/ehlo.c	/^static const struct kernel_param_ops string_ops = {$/;"	v	typeref:typename:const struct kernel_param_ops	file:
+tasks	HW_03/.vscode/tasks.json	/^    "tasks": [$/;"	a
+test	HW_03/ex_bin_search/Makefile	/^test:$/;"	t
+test	HW_03/ex_rb_tree/Makefile	/^test:$/;"	t
 test_string_modification	HW_02_hello_world/check.py	/^def test_string_modification():$/;"	f
+type	HW_03/.vscode/tasks.json	/^            "type": "shell",$/;"	s	object:tasks.0
 update_char_at	HW_02_hello_world/check.py	/^def update_char_at(i, c):$/;"	f
 write_char	HW_02_hello_world/check.py	/^def write_char(c):$/;"	f
 write_index	HW_02_hello_world/check.py	/^def write_index(i):$/;"	f

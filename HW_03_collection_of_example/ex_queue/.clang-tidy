@@ -1,0 +1,4 @@
+HeaderFilterRegex: '.*(utils/|include/).*'  # Фильтр для заголовков
+CheckOptions:
+  - key: HeaderFilterRegex
+    value: ".*(utils/|include/).*"
