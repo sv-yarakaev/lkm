@@ -3,6 +3,29 @@ SUBDIRS := ex_list ex_bin_search ex_rb_tree  ex_queue ex_bitmap
 export KBUILD_CFLAGS += -fanalyzer
 export EXTRA_CFLAGS += -Wall -Werror -Wextra -Wpointer-arith    
 
+FORMAT_EXT := c h 
+# Найти все файлы с нужными расширениями в подкаталогах
+FORMAT_FILES := $(foreach ext,$(FORMAT_EXT),$(wildcard $(addsuffix / *.$(ext),$(SUBDIRS))))
+
+format:
+	@if command -v clang-format >/dev/null 2>&1; then \
+        for dir in $(SUBDIRS); do \
+                        echo "Formatting files in $$dir..."; \
+                        for file in $$dir/*.c $$dir/*.h; do \
+                                if [ -f "$$file" ]; then \
+                                        echo "  Formatting $$file"; \
+                                        clang-format -i "$$file"; \
+                                fi; \
+                        done; \
+                done; \
+                echo "Formatting completed"; \
+        else \
+                echo "Error: clang-format not found. Please install it."; \
+                exit 1; \
+        fi	
+
+
+
 all:
 	@for dir in $(SUBDIRS); do \
 		echo "Building $$dir..."; \
