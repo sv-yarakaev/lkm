@@ -1,6 +1,6 @@
 # Defining variables
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wextra -pedantic -Wall -g
 SRC = main.c
 OBJ = main.o
 TARGET = app_us
