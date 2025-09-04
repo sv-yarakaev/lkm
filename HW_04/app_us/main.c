@@ -3,32 +3,38 @@
 //#include <string.h>
 #include <time.h>
 
-typedef struct rec_some {
+typedef struct record_db {
   char *name;
   long id;
+} record_db;
 
-} rec_some;
-
-static int count = 10;
-#define NUM_NAMES 10
+static int count = 42;
+#define NUM_NAMES 24
 #define NAME_LENGTH 20
-struct rec_some *simple_db;
+struct record_db *simple_db;
 
-static rec_some* write_row();
+static record_db* write_row();
 
-const char *random_names[] = {"Alice", "Bob",   "Charlie", "David", "Eva",
-                              "Frank", "Grace", "Henry",   "Ivy",   "Jack"};
+
+const char* random_names[] = {
+    "Alice", "Bob", "Charlie", "David", "Eva",
+    "Frank", "Grace", "Henry", "Ivy", "Jack",
+    "Kate", "Liam", "Mia", "Noah", "Olivia",
+    "Peter", "Quinn", "Rachel", "Sam", "Tina",
+    "Ulysses", "Victoria", "William", "Zoe"
+};
+
 
 static void init_db() {
   srand(time(NULL));
-  simple_db = (struct rec_some *)malloc(sizeof(struct rec_some) * count);
+  simple_db = (struct record_db *)malloc(sizeof(struct record_db) * count);
   for (int i = 0; i < count; i++) {
     simple_db[i] = *write_row();
   }
 }
 
-static rec_some* write_row() {
-    struct rec_some* row = (rec_some *)malloc(sizeof(rec_some));
+static record_db* write_row() {
+    struct record_db* row = (record_db *)malloc(sizeof(record_db));
     int name_index = rand() % NUM_NAMES;
     row->name = (char *) malloc(NAME_LENGTH * sizeof(char));
 //    strcpy(row->name, random_names[name_index]);
@@ -47,7 +53,7 @@ static void free_db() {
   simple_db = NULL;
 }
 
-struct rec_some read_row_db(int row) { return simple_db[row]; }
+struct record_db read_row_db(int row) { return simple_db[row]; }
 
 static void print_db() {
     printf("=== Local Simple DataBase ===\n");
