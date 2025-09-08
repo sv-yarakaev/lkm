@@ -1,9 +1,11 @@
 # Defining variables
 CC = gcc
-CFLAGS = -Wextra -pedantic -Wall -g
+CFLAGS = -Wextra  -Wall -g -lpthread
 SRC = main.c
 OBJ = main.o
 TARGET = app_us
+
+INCLUDES = -I../common
 
 # Default target
 all: $(TARGET)
@@ -13,7 +15,7 @@ $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
 $(OBJ): $(SRC)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(INCLUDES)  -c -o $@ $<
 
 # Cleaning up
 clean:
