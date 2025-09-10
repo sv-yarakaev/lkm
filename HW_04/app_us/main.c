@@ -175,7 +175,8 @@ static void *reader_thread(void *args) {
 
   free(args);
   for (int i = 0; i < READERS; i++) {
-    int idx = rand_r(&seed) % count;
+    // int idx = rand_r(&seed) % count;
+    long idx = 1000 + rand() % 9000;
     // Имитация времени между чтениями
     usleep(1000);
 
@@ -192,7 +193,7 @@ static void *reader_thread(void *args) {
 
     // >>> НАЧАЛО ЧТЕНИЯ >>>
     if (id == NULL) {
-      printf("[R] Record with idx=%d not found\n", idx);
+      printf("[R] Record with idx=%ld not found\n", idx);
       return NULL; // или обработать ошибку appropriately
     }
 
@@ -284,38 +285,36 @@ static void *writer_thread(void *args) {
 int main(void) {
 
   init_db();
-  /*  xx
-    pthread_t readers[READERS], writers[WRITERS];
-    for (int i = 0; i < READERS; i++) {
-      printf("Create reader\n");
-      int *id = malloc(sizeof(int));
-      *id = i + 1;
-      if (pthread_create(&readers[i], NULL, reader_thread, id)) {
-        perror("Cannot create reader");
-        return 1;
-      }
+  pthread_t readers[READERS], writers[WRITERS];
+  for (int i = 0; i < READERS; i++) {
+    printf("Create reader\n");
+    int *id = malloc(sizeof(int));
+    *id = i + 1;
+    if (pthread_create(&readers[i], NULL, reader_thread, id)) {
+      perror("Cannot create reader");
+      return 1;
     }
+  }
 
-    for (int i = 0; i < WRITERS; i++) {
-      printf("Create writer\n");
-      int *id = malloc(sizeof(int));
-      *id = i + 1;
-      if (pthread_create(&writers[i], NULL, writer_thread, id)) {
-        perror("Cannot create writer");
-        return 1;
-      }
+  for (int i = 0; i < WRITERS; i++) {
+    printf("Create writer\n");
+    int *id = malloc(sizeof(int));
+    *id = i + 1;
+    if (pthread_create(&writers[i], NULL, writer_thread, id)) {
+      perror("Cannot create writer");
+      return 1;
     }
+  }
 
-    // Ожидание завершения всех читателей
-    for (int i = 0; i < READERS; i++) {
-      pthread_join(readers[i], NULL);
-    }
+  // Ожидание завершения всех читателей
+  for (int i = 0; i < READERS; i++) {
+    pthread_join(readers[i], NULL);
+  }
 
-    // Ожидание завершения всех писателей
-    for (int i = 0; i < WRITERS; i++) {
-      pthread_join(writers[i], NULL);
-    }
-  */
+  // Ожидание завершения всех писателей
+  for (int i = 0; i < WRITERS; i++) {
+    pthread_join(writers[i], NULL);
+  }
   print_db();
 
   free_db();
