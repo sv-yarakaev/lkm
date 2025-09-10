@@ -15,7 +15,9 @@ typedef struct simple_ll_db {
 
 static LIST_HEAD(g_records);
 
-static void record_db_init_list(void) { INIT_LIST_HEAD(&g_records); }
+__attribute__((unused)) static void record_db_init_list(void) {
+  INIT_LIST_HEAD(&g_records);
+}
 
 static record_db_t *record_db_new(const char *name, long id) {
   record_db_t *rec = malloc(sizeof(*rec));
@@ -46,7 +48,6 @@ static void record_db_free(record_db_t *rec) {
   free(rec);
 }
 
-
 static int count = 42;
 #define NUM_NAMES 24
 #define NAME_LENGTH 20
@@ -57,6 +58,12 @@ static pthread_rwlock_t db_lock;
 static void *writer_thread(void *args);
 static void *reader_thread(void *args);
 static volatile int running = 1;
+
+pthread_mutex_t rmutex = PTHREAD_MUTEX_INITIALIZER; // Защищает readers_count
+pthread_mutex_t rw_mutex =
+    PTHREAD_MUTEX_INITIALIZER; // Защищает запись/чтение shared_data
+int readers_count = 0;
+int shared_data = 0;
 
 const char *random_names[] = {
     "Alice", "Bob",   "Charlie", "David",    "Eva",     "Frank",
@@ -69,50 +76,51 @@ static void init_db() {
   for (int i = 0; i < count; i++) {
     int name_index = rand() % NUM_NAMES;
     char *name = (char *)malloc(NAME_LENGTH * sizeof(char));
-    snprintf(name, NAME_LENGTH, "%s", random_names[name_index]); 
+    if (name != NULL) {
+      snprintf(name, NAME_LENGTH, "%s", random_names[name_index]);
+
+    } else {
+      continue;
+    }
     long id = 1000 + rand() % 9000;
     record_db_add(name, id);
     free(name);
   }
 }
 
-
 static void free_db() {
-   record_db_t *pos, *n;
-    list_for_each_entry_safe(pos, n, &g_records, node) {
-        list_del(&pos->node);
-        record_db_free(pos);
-    }
+  record_db_t *pos, *n;
+  list_for_each_entry_safe(pos, n, &g_records, node) {
+    list_del(&pos->node);
+    record_db_free(pos);
+  }
 }
 
-static record_db_t *record_db_find_by_id(long id)
-{
-    record_db_t *pos;
+static record_db_t *record_db_find_by_id(long id) {
+  record_db_t *pos;
 
-    list_for_each_entry(pos, &g_records, node) {
-        if (pos->id == id) {
-            return pos;
-        }
+  list_for_each_entry(pos, &g_records, node) {
+    if (pos->id == id) {
+      return pos;
     }
-    return NULL;
+  }
+  return NULL;
 }
-
-
 
 /* Поиск по имени */
-static record_db_t *record_db_find_by_name(const char *name)
-{
-    record_db_t *pos;
+__attribute__((unused)) static record_db_t *
+record_db_find_by_name(const char *name) {
+  record_db_t *pos;
 
-    if (!name)
-        return NULL;
-
-    list_for_each_entry(pos, &g_records, node) {
-        if (strcmp(pos->name, name) == 0) {
-            return pos;
-        }
-    }
+  if (!name)
     return NULL;
+
+  list_for_each_entry(pos, &g_records, node) {
+    if (strcmp(pos->name, name) == 0) {
+      return pos;
+    }
+  }
+  return NULL;
 }
 
 static void print_db() {
@@ -125,89 +133,92 @@ static void print_db() {
   printf("===============================\n");
 }
 
-static int record_db_update_by_id(long old_id, long new_id, const char *new_name)
-{
-    record_db_t *pos;
-    char *dup;
-    const char *nm = new_name ? new_name : "";
+static int record_db_update_by_id(long old_id, long new_id,
+                                  const char *new_name) {
+  record_db_t *pos;
+  char *dup;
+  const char *nm = new_name ? new_name : "";
 
-    dup = strdup(nm);
-    if (!dup)
-        return -1;
-
-    list_for_each_entry(pos, &g_records, node) {
-        if (pos->id == old_id) {
-            char *old = pos->name;
-
-            pos->id = new_id;
-            pos->name = dup;
-
-            free(old);           
-            return 0;
-        }
-    }
-
-    free(dup);                 
+  dup = strdup(nm);
+  if (!dup)
     return -1;
-}
 
+  list_for_each_entry(pos, &g_records, node) {
+    if (pos->id == old_id) {
+      char *old = pos->name;
+      pos->id = new_id;
+      pos->name = dup;
 
-
-int main(void) {
-  init_db();
-  /*
-
-  */
-  print_db();
-/*
-  if (pthread_rwlock_init(&db_lock, NULL)) {
-    perror("cannot make lock init");
-    return 1;
-  }
-  pthread_t readers[READERS];
-  pthread_t writers[WRITERS];
-
-  for (int i = 0; i < READERS; i++) {
-    if (pthread_create(&readers[i], NULL, reader_thread, NULL) != 0) {
-      perror("pthread_create reader");
-      return 1;
+      free(old);
+      return 0;
     }
   }
-  for (int i = 0; i < WRITERS; i++) {
-    if (pthread_create(&writers[i], NULL, writer_thread, NULL) != 0) {
-      perror("pthread_create writer");
-      return 1;
-    }
-  }
-*/
-  free_db();
-  return 0;
+
+  free(dup);
+  return -1;
 }
 
 static void *reader_thread(void *args) {
+  int id_local = *(int *)args;
+  /*  first version reading  */
   unsigned int seed =
       (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
   char name_copy[NAME_LENGTH];
-  while (running) {
+
+  free(args);
+  for (int i = 0; i < READERS; i++) {
     int idx = rand_r(&seed) % count;
+    // Имитация времени между чтениями
+    usleep(1000);
 
-    pthread_rwlock_rdlock(&db_lock);
+    // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЧТЕНИЯ >>>
+    // Заблокировать доступ к readers_count
+    pthread_mutex_lock(&rmutex);
+    readers_count++;
+    if (readers_count == 1) {
+      // Если это первый читатель, заблокировать писателей
+      pthread_mutex_lock(&rw_mutex);
+    }
     record_db_t* id = record_db_find_by_id(idx);
-    snprintf(name_copy, sizeof(name_copy), "%s", id->name);
-    pthread_rwlock_unlock(&db_lock);
+    pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
 
-    printf("[R] read idx=%d name=%s id=%ld\n", idx, name_copy, id->id);
+    // >>> НАЧАЛО ЧТЕНИЯ >>>
+    if (id == NULL) {
+      printf("[R] Record with idx=%d not found\n", idx);
+      return NULL; // или обработать ошибку appropriately
+    }
 
-    usleep(50 * 1000); // 50 ms
+    char *out_id = strdup(id->name);
+    if (out_id == NULL) {
+      printf("[R] Memory allocation failed\n");
+      return NULL; // обработка ошибки выделения памяти
+    }
+    printf("[R] read idx=%d name=%s id=%ld\n", idx, out_id, id->id);
+    usleep(500); // Имитация времени чтения
+    // <<< КОНЕЦ ЧТЕНИЯ <<<
+
+    // >>> ВЫХОД ИЗ КРИТИЧЕСКОЙ СЕКЦИИ ДЛЯ ЧТЕНИЯ >>>
+    free(out_id);
+    // Заблокировать доступ к readers_count
+    pthread_mutex_lock(&rmutex);
+    readers_count--;
+    if (readers_count == 0) {
+      // Если это последний читатель, разблокировать писателей
+      pthread_mutex_unlock(&rw_mutex);
+    }
+    pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
   }
+
+  pthread_exit(NULL);
   return NULL;
 }
 
 static void *writer_thread(void *args) {
+  int id_local = *(int *)args;
   unsigned int seed =
       (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
 
-  while (running) {
+  /* while (id_local) {
     int idx = rand_r(&seed) % count;
 
     char *new_name = (char *)malloc(NAME_LENGTH);
@@ -230,12 +241,75 @@ static void *writer_thread(void *args) {
     pthread_rwlock_unlock(&db_lock);
 
 
-    printf("[W] write idx=%d %ld/%s -> %ld/%s\n", idx, old_id->id, "(old)", new_id,
-           new_name);
+    printf("Thread: %d [W] write idx=%d %ld/%s -> %ld/%s\n", id_local, idx,
+  old_id->id, "(old)", new_id, new_name);
 
     usleep(120 * 1000); // 120 ms
     free(new_name);
+    id_local--;
 
+  } */
+  for (int i = 0; i < WRITERS; i++) {
+    // Имитация времени между записями
+    usleep(1500);
+
+    // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЗАПИСИ >>>
+    pthread_mutex_lock(&rw_mutex);
+
+    // >>> НАЧАЛО ЗАПИСИ >>>
+    printf("\tWriter: %d starts record\n", id_local);
+    shared_data++; // Изменение разделяемых данных
+    usleep(1000);  // Имитация времени записи
+    printf("\tWriter %d ended make record: new value = %d\n", id_local,
+           shared_data);
+    // <<< КОНЕЦ ЗАПИСИ <<<
+
+    // >>> ВЫХОД ИЗ КРИТИЧЕСКОЙ СЕКЦИИ ДЛЯ ЗАПИСИ >>>
+    pthread_mutex_unlock(&rw_mutex);
   }
+
+  pthread_exit(NULL);
+  free(args);
   return NULL;
+}
+
+int main(void) {
+
+  init_db();
+
+  pthread_t readers[READERS], writers[WRITERS];
+  for (int i = 0; i < READERS; i++) {
+    printf("Create reader\n");
+    int *id = malloc(sizeof(int));
+    *id = i + 1;
+    if (pthread_create(&readers[i], NULL, reader_thread, id)) {
+      perror("Cannot create reader");
+      return 1;
+    }
+  }
+
+  for (int i = 0; i < WRITERS; i++) {
+    printf("Create writer\n");
+    int *id = malloc(sizeof(int));
+    *id = i + 1;
+    if (pthread_create(&writers[i], NULL, writer_thread, id)) {
+      perror("Cannot create writer");
+      return 1;
+    }
+  }
+
+  // Ожидание завершения всех читателей
+  for (int i = 0; i < READERS; i++) {
+    pthread_join(readers[i], NULL);
+  }
+
+  // Ожидание завершения всех писателей
+  for (int i = 0; i < WRITERS; i++) {
+    pthread_join(writers[i], NULL);
+  }
+
+  print_db();
+
+  free_db();
+  return 0;
 }
