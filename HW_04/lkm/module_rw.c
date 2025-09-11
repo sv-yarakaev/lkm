@@ -84,6 +84,7 @@ static void print_db(void) {
     pr_info("===============================\n");
 }
 
+__attribute__((unused))
 static int record_db_update_by_id(long old_id, long new_id, const char *new_name) {
     record_db_t *pos;
     char *dup;
@@ -136,7 +137,7 @@ static int reader_thread(void *arg) {
     kfree(arg);
 
     while (!kthread_should_stop() && attempts < MAX_ATTEMPTS) {
-        long idx = 1000 + (get_random_u32() % 9000);  // Полный диапазон для шанса нахождения
+        long idx = 1000 + (get_random_u32() % 9000);  
 
         mutex_lock(&rmutex);
         readers_count++;
@@ -156,13 +157,13 @@ static int reader_thread(void *arg) {
 
         if (rec == NULL) {
             pr_info("\tReader %d: id = %ld not found\n", id_local, idx);
-            msleep(100);  // Задержка 0.1 сек
+            msleep(100);  
             attempts++;
             continue;
         } else {
             pr_info("[R] Find record %d: read idx=%ld name=%s id=%ld\n",
                    id_local, idx, rec->name, rec->id);
-            break;  // Успех - выход из цикла
+            break;  
         }
     }
 
@@ -170,7 +171,7 @@ static int reader_thread(void *arg) {
         pr_warn("Reader %d: max attempts reached\n", id_local);
     }
 
-    return 0;  // Завершение потока
+    return 0;  
 }
 
 static int writer_thread(void *arg) {
@@ -199,7 +200,7 @@ static int writer_thread(void *arg) {
             rec->name = new_name;
             pr_info("\tChange name in record: %s\n", rec->name);
             mutex_unlock(&rw_mutex);
-            break;  // Успех - выход
+            break; 
         } else {
             mutex_unlock(&rw_mutex);
             pr_info("\tWriter %d: id = %ld not found\n", id_local, idx);
@@ -212,7 +213,7 @@ static int writer_thread(void *arg) {
         pr_warn("Writer %d: max attempts reached\n", id_local);
     }
 
-    return 0;  // Завершение потока
+    return 0;  
 }
 
 static struct task_struct *readers[READERS];
@@ -264,7 +265,6 @@ static int __init rw_module_init(void) {
     return 0;
 
 cleanup:
-    // Очистка при ошибке
     for (i = 0; i < READERS; i++) {
         if (readers[i] && !IS_ERR(readers[i]))
             kthread_stop(readers[i]);
