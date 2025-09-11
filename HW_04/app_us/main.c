@@ -54,7 +54,7 @@ long *current_ids;
 
 #define NUM_NAMES 24
 #define NAME_LENGTH 20
-static pthread_rwlock_t db_lock;
+// static pthread_rwlock_t db_lock;
 #define READERS 5
 #define WRITERS 2
 
@@ -171,52 +171,41 @@ static void *reader_thread(void *args) {
   /*  first version reading  */
   unsigned int seed =
       (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
-  char name_copy[NAME_LENGTH];
 
   free(args);
-  for (int i = 0; i < READERS; i++) {
-    // int idx = rand_r(&seed) % count;
-    long idx = 1000 + rand() % 9000;
-    // Имитация времени между чтениями
-    usleep(1000);
 
-    // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЧТЕНИЯ >>>
-    // Заблокировать доступ к readers_count
+  while(1) {
+    long idx = 1000 + rand_r(&seed) % 1000;
+
     pthread_mutex_lock(&rmutex);
-    readers_count++;
+    readers_count++; 
     if (readers_count == 1) {
-      // Если это первый читатель, заблокировать писателей
       pthread_mutex_lock(&rw_mutex);
     }
     record_db_t *id = record_db_find_by_id(idx);
-    pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
-
-    // >>> НАЧАЛО ЧТЕНИЯ >>>
+    pthread_mutex_unlock(&rmutex);
     if (id == NULL) {
-      printf("[R] Record with idx=%ld not found\n", idx);
-      return NULL; // или обработать ошибку appropriately
-    }
+      printf("\tReader: id = %ld not found\n", idx);
+      continue;
+    } else {
+      char *out_id = strdup(id->name);
+      if (out_id == NULL) {
+        printf("[R] Memory allocation failed\n");
+        return NULL; // обработка ошибки выделения памяти
+      }
+      printf("[R] Find record %d: read idx=%ld name=%s id=%ld\n", id_local, idx, out_id, id->id);
+      free(out_id);
+      pthread_mutex_lock(&rmutex);
+      readers_count--;
+      if (readers_count == 0) {
+        // Если это последний читатель, разблокировать писателей
+        pthread_mutex_unlock(&rw_mutex);
+      }
+      pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
+      return NULL;
 
-    char *out_id = strdup(id->name);
-    if (out_id == NULL) {
-      printf("[R] Memory allocation failed\n");
-      return NULL; // обработка ошибки выделения памяти
     }
-    printf("[R] read idx=%d name=%s id=%ld\n", idx, out_id, id->id);
-    usleep(500); // Имитация времени чтения
-    // <<< КОНЕЦ ЧТЕНИЯ <<<
-
-    // >>> ВЫХОД ИЗ КРИТИЧЕСКОЙ СЕКЦИИ ДЛЯ ЧТЕНИЯ >>>
-    free(out_id);
-    // Заблокировать доступ к readers_count
-    pthread_mutex_lock(&rmutex);
-    readers_count--;
-    if (readers_count == 0) {
-      // Если это последний читатель, разблокировать писателей
-      pthread_mutex_unlock(&rw_mutex);
-    }
-    pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
-  }
+  } 
 
   pthread_exit(NULL);
   return NULL;
@@ -224,56 +213,27 @@ static void *reader_thread(void *args) {
 
 static void *writer_thread(void *args) {
   int id_local = *(int *)args;
-  unsigned int seed =
-      (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
+  unsigned int seed = (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
 
-  /* while (id_local) {
-    int idx = rand_r(&seed) % count;
-
-    char *new_name = (char *)malloc(NAME_LENGTH);
-    if (!new_name) {
-      perror("malloc");
-      break;
-    }
-    int name_index = rand_r(&seed) % NUM_NAMES;
-    snprintf(new_name, NAME_LENGTH, "%s", random_names[name_index]);
-    long new_id = 1000 + (rand_r(&seed) % 9000);
-
-    pthread_rwlock_wrlock(&db_lock);
-
-
-    record_db_t *old_id = record_db_find_by_id(idx);
-
-    record_db_update_by_id(idx, new_id,  new_name);
-
-
-    pthread_rwlock_unlock(&db_lock);
-
-
-    printf("Thread: %d [W] write idx=%d %ld/%s -> %ld/%s\n", id_local, idx,
-  old_id->id, "(old)", new_id, new_name);
-
-    usleep(120 * 1000); // 120 ms
-    free(new_name);
-    id_local--;
-
-  } */
-  for (int i = 0; i < WRITERS; i++) {
-    // Имитация времени между записями
-    usleep(1500);
+  while(1) {
 
     // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЗАПИСИ >>>
+    long idx = 1000 + rand_r(&seed) % 1000;
     pthread_mutex_lock(&rw_mutex);
 
     // >>> НАЧАЛО ЗАПИСИ >>>
-    printf("\tWriter: %d starts record\n", id_local);
-    shared_data++; // Изменение разделяемых данных
-    usleep(1000);  // Имитация времени записи
-    printf("\tWriter %d ended make record: new value = %d\n", id_local,
-           shared_data);
-    // <<< КОНЕЦ ЗАПИСИ <<<
+    record_db_t* id = record_db_find_by_id(idx);
+    if ( id != NULL) {
+      printf("[W] Find record %d: id = %ld name = %s\n", id_local, id->id, id->name);
+      int name_index = rand() % NUM_NAMES;
+      //current_ids[i] = id;
+      snprintf(id->name, NAME_LENGTH , "%s", random_names[name_index]);  //id->name 
+      printf("\tChange name in record: %s", id->name);
 
-    // >>> ВЫХОД ИЗ КРИТИЧЕСКОЙ СЕКЦИИ ДЛЯ ЗАПИСИ >>>
+      pthread_mutex_unlock(&rw_mutex);
+      return NULL;
+    }
+
     pthread_mutex_unlock(&rw_mutex);
   }
 
