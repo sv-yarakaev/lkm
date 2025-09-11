@@ -54,17 +54,14 @@ long *current_ids;
 
 #define NUM_NAMES 24
 #define NAME_LENGTH 20
-// static pthread_rwlock_t db_lock;
-#define READERS 5
+#define READERS 2
 #define WRITERS 2
 
 static void *writer_thread(void *args);
 static void *reader_thread(void *args);
-static volatile int running = 1;
 
-pthread_mutex_t rmutex = PTHREAD_MUTEX_INITIALIZER; // Защищает readers_count
-pthread_mutex_t rw_mutex =
-    PTHREAD_MUTEX_INITIALIZER; // Защищает запись/чтение shared_data
+pthread_mutex_t rmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t rw_mutex = PTHREAD_MUTEX_INITIALIZER;
 int readers_count = 0;
 int shared_data = 0;
 
@@ -137,12 +134,10 @@ static void print_db() {
     printf("record: id=%ld name=%s\n", pos->id, pos->name);
   }
   printf("===============================\n");
-
-  //  record_db_find_by_id
 }
 
-static int record_db_update_by_id(long old_id, long new_id,
-                                  const char *new_name) {
+__attribute__((unused)) static int
+record_db_update_by_id(long old_id, long new_id, const char *new_name) {
   record_db_t *pos;
   char *dup;
   const char *nm = new_name ? new_name : "";
@@ -168,67 +163,62 @@ static int record_db_update_by_id(long old_id, long new_id,
 
 static void *reader_thread(void *args) {
   int id_local = *(int *)args;
-  /*  first version reading  */
   unsigned int seed =
       (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
-
   free(args);
 
-  while(1) {
-    long idx = 1000 + rand_r(&seed) % 1000;
+  while (1) {
+    long idx = 1000 + rand_r(&seed) % 9000;
 
     pthread_mutex_lock(&rmutex);
-    readers_count++; 
+    readers_count++;
     if (readers_count == 1) {
       pthread_mutex_lock(&rw_mutex);
     }
-    record_db_t *id = record_db_find_by_id(idx);
     pthread_mutex_unlock(&rmutex);
+
+    record_db_t *id = record_db_find_by_id(idx);
+
+    pthread_mutex_lock(&rmutex);
+    readers_count--;
+    if (readers_count == 0) {
+      pthread_mutex_unlock(&rw_mutex);
+    }
+    pthread_mutex_unlock(&rmutex);
+
     if (id == NULL) {
-      printf("\tReader: id = %ld not found\n", idx);
+      printf("\tReader %d: id = %ld not found\n", id_local, idx);
+      usleep(100000);
       continue;
     } else {
-      char *out_id = strdup(id->name);
-      if (out_id == NULL) {
-        printf("[R] Memory allocation failed\n");
-        return NULL; // обработка ошибки выделения памяти
-      }
-      printf("[R] Find record %d: read idx=%ld name=%s id=%ld\n", id_local, idx, out_id, id->id);
-      free(out_id);
-      pthread_mutex_lock(&rmutex);
-      readers_count--;
-      if (readers_count == 0) {
-        // Если это последний читатель, разблокировать писателей
-        pthread_mutex_unlock(&rw_mutex);
-      }
-      pthread_mutex_unlock(&rmutex); // Разблокировать readers_count
+      printf("[R] Find record %d: read idx=%ld name=%s id=%ld\n", id_local, idx,
+             id->name, id->id);
       return NULL;
-
     }
-  } 
-
-  pthread_exit(NULL);
+  }
   return NULL;
 }
 
 static void *writer_thread(void *args) {
   int id_local = *(int *)args;
-  unsigned int seed = (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
+  unsigned int seed =
+      (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
 
-  while(1) {
+  while (1) {
 
     // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЗАПИСИ >>>
-    long idx = 1000 + rand_r(&seed) % 1000;
+    long idx = 1000 + rand_r(&seed) % 9000;
     pthread_mutex_lock(&rw_mutex);
 
     // >>> НАЧАЛО ЗАПИСИ >>>
-    record_db_t* id = record_db_find_by_id(idx);
-    if ( id != NULL) {
-      printf("[W] Find record %d: id = %ld name = %s\n", id_local, id->id, id->name);
+    record_db_t *id = record_db_find_by_id(idx);
+    if (id != NULL) {
+      printf("[W] Find record %d: id = %ld name = %s\n", id_local, id->id,
+             id->name);
       int name_index = rand() % NUM_NAMES;
-      //current_ids[i] = id;
-      snprintf(id->name, NAME_LENGTH , "%s", random_names[name_index]);  //id->name 
-      printf("\tChange name in record: %s", id->name);
+      free(id->name);
+      id->name = strdup(random_names[name_index]);
+      printf("\tChange name in record: %s\n", id->name);
 
       pthread_mutex_unlock(&rw_mutex);
       return NULL;
