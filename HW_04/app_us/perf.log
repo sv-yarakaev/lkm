@@ -1,0 +1,183 @@
+Create reader
+Create reader
+Create writer
+	Reader 1: id = 1836 not found
+	Reader 2: id = 1608 not found
+Create writer
+[W] Find record 1: id = 1636 name = Zoe
+	Change name in record: Noah
+[W] Find record 2: id = 5381 name = Charlie
+	Change name in record: Olivia
+	Reader 1: id = 7838 not found
+	Reader 2: id = 7567 not found
+	Reader 2: id = 4526 not found
+	Reader 1: id = 9647 not found
+	Reader 1: id = 9025 not found
+	Reader 2: id = 2454 not found
+	Reader 1: id = 5610 not found
+	Reader 2: id = 1584 not found
+	Reader 1: id = 2995 not found
+	Reader 2: id = 6376 not found
+	Reader 1: id = 9863 not found
+	Reader 2: id = 2016 not found
+	Reader 1: id = 8103 not found
+	Reader 2: id = 5009 not found
+	Reader 1: id = 6175 not found
+	Reader 2: id = 7934 not found
+	Reader 2: id = 7928 not found
+	Reader 1: id = 8541 not found
+	Reader 2: id = 9618 not found
+	Reader 1: id = 9233 not found
+	Reader 2: id = 8757 not found
+	Reader 1: id = 9958 not found
+	Reader 2: id = 6865 not found
+	Reader 1: id = 4457 not found
+	Reader 1: id = 9811 not found
+	Reader 2: id = 4882 not found
+	Reader 2: id = 3889 not found
+	Reader 1: id = 5055 not found
+	Reader 1: id = 3651 not found
+	Reader 2: id = 5119 not found
+	Reader 1: id = 7350 not found
+	Reader 2: id = 8031 not found
+	Reader 1: id = 8457 not found
+	Reader 2: id = 7181 not found
+	Reader 1: id = 3189 not found
+	Reader 2: id = 7872 not found
+	Reader 1: id = 9485 not found
+	Reader 2: id = 8750 not found
+	Reader 1: id = 4060 not found
+	Reader 2: id = 6238 not found
+	Reader 1: id = 5706 not found
+	Reader 2: id = 3899 not found
+	Reader 1: id = 4538 not found
+	Reader 2: id = 4678 not found
+	Reader 1: id = 3683 not found
+	Reader 2: id = 9881 not found
+	Reader 1: id = 5113 not found
+[R] Find record 2: read idx=8723 name=Alice id=8723
+	Reader 1: id = 4986 not found
+	Reader 1: id = 8830 not found
+	Reader 1: id = 5775 not found
+	Reader 1: id = 5754 not found
+	Reader 1: id = 6240 not found
+	Reader 1: id = 9907 not found
+	Reader 1: id = 1463 not found
+	Reader 1: id = 7796 not found
+	Reader 1: id = 1381 not found
+	Reader 1: id = 6988 not found
+	Reader 1: id = 3463 not found
+	Reader 1: id = 9997 not found
+	Reader 1: id = 2583 not found
+	Reader 1: id = 3495 not found
+	Reader 1: id = 5752 not found
+	Reader 1: id = 1408 not found
+	Reader 1: id = 1508 not found
+	Reader 1: id = 6243 not found
+	Reader 1: id = 3294 not found
+	Reader 1: id = 2763 not found
+	Reader 1: id = 1078 not found
+	Reader 1: id = 9368 not found
+	Reader 1: id = 9788 not found
+	Reader 1: id = 8722 not found
+	Reader 1: id = 9523 not found
+	Reader 1: id = 4170 not found
+	Reader 1: id = 9144 not found
+	Reader 1: id = 6152 not found
+	Reader 1: id = 5138 not found
+	Reader 1: id = 2908 not found
+	Reader 1: id = 5238 not found
+	Reader 1: id = 2722 not found
+	Reader 1: id = 2581 not found
+	Reader 1: id = 6484 not found
+	Reader 1: id = 2357 not found
+	Reader 1: id = 5187 not found
+	Reader 1: id = 8873 not found
+	Reader 1: id = 2260 not found
+	Reader 1: id = 8299 not found
+	Reader 1: id = 6077 not found
+	Reader 1: id = 6069 not found
+	Reader 1: id = 2995 not found
+	Reader 1: id = 1385 not found
+	Reader 1: id = 8173 not found
+	Reader 1: id = 7733 not found
+	Reader 1: id = 4349 not found
+	Reader 1: id = 3262 not found
+	Reader 1: id = 6308 not found
+	Reader 1: id = 2213 not found
+	Reader 1: id = 9632 not found
+	Reader 1: id = 2060 not found
+	Reader 1: id = 9165 not found
+	Reader 1: id = 8239 not found
+	Reader 1: id = 2762 not found
+	Reader 1: id = 9596 not found
+	Reader 1: id = 7098 not found
+	Reader 1: id = 6059 not found
+	Reader 1: id = 7348 not found
+	Reader 1: id = 7547 not found
+	Reader 1: id = 7671 not found
+	Reader 1: id = 3649 not found
+	Reader 1: id = 6296 not found
+	Reader 1: id = 7121 not found
+	Reader 1: id = 5562 not found
+	Reader 1: id = 1759 not found
+	Reader 1: id = 4282 not found
+	Reader 1: id = 1397 not found
+	Reader 1: id = 9536 not found
+	Reader 1: id = 8194 not found
+	Reader 1: id = 9801 not found
+	Reader 1: id = 8698 not found
+	Reader 1: id = 6439 not found
+	Reader 1: id = 1799 not found
+	Reader 1: id = 5275 not found
+	Reader 1: id = 9855 not found
+	Reader 1: id = 8675 not found
+	Reader 1: id = 1254 not found
+	Reader 1: id = 6034 not found
+	Reader 1: id = 6737 not found
+	Reader 1: id = 3698 not found
+[R] Find record 1: read idx=8723 name=Alice id=8723
+=== Local Simple DataBase ===
+record: id=2247 name=Noah
+record: id=8723 name=Alice
+record: id=3059 name=Mia
+record: id=1016 name=Kate
+record: id=6036 name=Jack
+record: id=9155 name=Jack
+record: id=6794 name=Bob
+record: id=5628 name=William
+record: id=5244 name=Rachel
+record: id=8842 name=Noah
+record: id=8844 name=Ivy
+record: id=7910 name=Liam
+record: id=6378 name=Peter
+record: id=9067 name=Eva
+record: id=1883 name=Grace
+record: id=5667 name=Olivia
+record: id=2622 name=Kate
+record: id=2630 name=William
+record: id=5872 name=Charlie
+record: id=5995 name=Olivia
+record: id=6656 name=Victoria
+record: id=1286 name=William
+record: id=5381 name=Olivia
+record: id=1020 name=Kate
+record: id=9879 name=Jack
+record: id=9529 name=Grace
+record: id=2018 name=Liam
+record: id=2346 name=Henry
+record: id=7036 name=Eva
+record: id=8258 name=William
+record: id=1636 name=Noah
+record: id=4753 name=Olivia
+record: id=2020 name=Tina
+record: id=7997 name=Ivy
+record: id=5382 name=Frank
+record: id=5154 name=Quinn
+record: id=5495 name=William
+record: id=1841 name=Quinn
+record: id=5058 name=Ulysses
+record: id=6853 name=Noah
+record: id=1779 name=Rachel
+record: id=7364 name=Grace
+===============================
