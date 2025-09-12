@@ -1,4 +1,6 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include "linux/printk.h"
+#include "linux/types.h"
 #include <linux/delay.h> // msleep
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -134,6 +136,34 @@ static void free_db(void) {
   }
 }
 
+static int reader_db(void *data) {
+  int reader_id = *(int *) data;
+  long id;
+  int count = 0;
+  while (count < MAX_ATTEMPTS) {
+    id = 1000 + (get_random_u32() % 9000);
+    mutex_lock(&rmutex);
+    record_db_t* record = record_db_find_by_id(id);
+    if (record != NULL) {
+      pr_info("Reader: %d", reader_id);
+      pr_info("Reader find record: id = %ld, name = %s", record->id, record->name);
+      mutex_unlock(&rmutex);
+      return 0;
+    } else {
+      count++;
+      mutex_unlock(&rmutex);
+      continue;
+    }
+  }
+  pr_warn("Reader %d: Use all MAX_ATTEMPTS, and not find record", reader_id);
+
+  return 0;
+}
+
+static int writer_db(void *data) {
+
+  return 0;
+}
 
 
 static int __init rw_module_init(void) {
@@ -143,13 +173,19 @@ static int __init rw_module_init(void) {
     pr_err("Failed to init DB\n");
     return -ENOMEM;
   }
-
+  int c = 10;
+  
+  reader_db(&c);
  return 0;
 }
 
 static void __exit rw_module_exit(void) {
   print_db();
   free_db();
+
+  mutex_destroy(&rmutex);
+  mutex_destroy(&rw_mutex);
+
 
   pr_info("RW module unloaded\n");
 }
