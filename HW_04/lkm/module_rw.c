@@ -1,6 +1,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#include "linux/printk.h"
-#include "linux/types.h"
+#include <linux/rwsem.h>
+#include <linux/printk.h>
+#include <linux/types.h>
 #include <linux/delay.h> // msleep
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -36,6 +37,7 @@ static struct mutex rmutex;
 static struct mutex rw_mutex;
 static struct task_struct *reader_threads[READERS];
 static struct task_struct *writer_threads[WRITERS];
+static struct rw_semaphore rw_sem;
 
 
 static record_db_t *record_db_new(const char *name, long id) {
@@ -142,16 +144,16 @@ static int reader_db(void *data) {
   int count = 0;
   while (count < MAX_ATTEMPTS) {
     id = 1000 + (get_random_u32() % 9000);
-    mutex_lock(&rmutex);
+    down_read(&rw_sem);
     record_db_t* record = record_db_find_by_id(id);
     if (record != NULL) {
       pr_info("Reader: %d", reader_id);
       pr_info("Reader find record: id = %ld, name = %s", record->id, record->name);
-      mutex_unlock(&rmutex);
+      up_read(&rw_sem);
       return 0;
     } else {
       count++;
-      mutex_unlock(&rmutex);
+      up_read(&rw_sem);
       continue;
     }
   }
@@ -161,6 +163,14 @@ static int reader_db(void *data) {
 }
 
 static int writer_db(void *data) {
+  int writer_id = *(int *) data;
+  long id;
+  int count = 0;
+  bool find = false;
+  while(count < MAX_ATTEMPTS) {
+   id = 1000 + (get_random_u32() % 9000); 
+  }
+
 
   return 0;
 }
@@ -168,13 +178,13 @@ static int writer_db(void *data) {
 
 static int __init rw_module_init(void) {
 
+  init_rwsem(&rw_sem);
 
   if (init_db() != 0) {
     pr_err("Failed to init DB\n");
     return -ENOMEM;
   }
   int c = 10;
-  
   reader_db(&c);
  return 0;
 }
