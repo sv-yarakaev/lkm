@@ -1,5 +1,5 @@
 
-SUBDIRS := ex_list ex_bin_search ex_rb_tree  ex_queue ex_bitmap
+SUBDIRS := ex_softirq  ex_tasklets  ex_workqueue
 export KBUILD_CFLAGS += -fanalyzer
 export EXTRA_CFLAGS += -Wall -Werror -Wextra -Wpointer-arith    
 

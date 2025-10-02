@@ -6,8 +6,6 @@
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 
-
-
 static int __init ex_softirq_init(void) {
 
   pr_info("Load module.\n");
@@ -15,9 +13,7 @@ static int __init ex_softirq_init(void) {
   return 0;
 }
 
-static void __exit ex_softirq_exit(void) {
-  pr_info("BB n exit.\n");
-}
+static void __exit ex_softirq_exit(void) { pr_info("BB n exit.\n"); }
 
 module_init(ex_softirq_init);
 module_exit(ex_softirq_exit);
