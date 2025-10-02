@@ -1,0 +1,30 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 20  of event 'cycles:Pu'
+# Event count (approx.): 2533791
+#
+# Overhead  Command  Shared Object         Symbol                             
+# ........  .......  ....................  ...................................
+#
+    14.01%  app_us   libc.so.6             [.] __printf_buffer
+    11.38%  app_us   app_us                [.] reader_thread
+     9.87%  app_us   libc.so.6             [.] usleep
+     9.37%  app_us   app_us                [.] record_db_find_by_id
+     8.50%  app_us   libc.so.6             [.] __vfprintf_internal
+     6.45%  app_us   libc.so.6             [.] __strchrnul_avx2
+     6.45%  app_us   libc.so.6             [.] pthread_mutex_lock@@GLIBC_2.2.5
+     4.93%  app_us   ld-linux-x86-64.so.2  [.] _dl_relocate_object_no_relro
+     4.93%  app_us   libc.so.6             [.] _IO_file_xsputn@@GLIBC_2.2.5
+     4.93%  app_us   libc.so.6             [.] __printf_buffer_flush_to_file
+     4.93%  app_us   libc.so.6             [.] clock_nanosleep@GLIBC_2.2.5
+     4.93%  app_us   libc.so.6             [.] rand_r
+     4.93%  app_us   [unknown]             [k] 0xffffffffa9e01968
+     4.36%  app_us   libc.so.6             [.] printf
+
+
+#
+# (Tip: To only collect call graph on one event use perf record -e cpu/cpu-cycles,callgraph=1/,branches ; perf report --show-ref-call-graph)
+#
