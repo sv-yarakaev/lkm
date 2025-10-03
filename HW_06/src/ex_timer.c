@@ -4,41 +4,55 @@
 #include <linux/init.h>
 #include <linux/timer.h>
 #include <linux/jiffies.h>
-#include <linux/param.h> //for HZ
-                     
+#include <linux/version.h>
+
 static struct timer_list my_timer;
-static unsigned int counter = 0;
-static unsigned int timeout_ms; // automatic define interval
+static unsigned int counter;
+//static unsigned int timeout_ms;
+static unsigned long interval_jiff;
+
+#define TIMER_INTERVAL_SEC 30U   /* период таймера, секунды  */
+#define TIMER_STOP_SEC     300U  /* сколько секунд печатаем */
 
 
-static void my_timer_callback(struct timer_list *timer) {
+
+static void my_timer_callback(struct timer_list *timer)
+{
     counter++;
-    pr_info("Tick %u, HZ = %d, timeout = %u, jiffies = %lu\n", counter, HZ, timeout_ms, jiffies);
+    unsigned int elapsed_sec;
+    elapsed_sec = counter * TIMER_INTERVAL_SEC;
 
-    mod_timer(timer, jiffies + msecs_to_jiffies(timeout_ms));
+    if (elapsed_sec >= TIMER_STOP_SEC)
+		return;
+    pr_info("min=%u: Hello, timer!\n", elapsed_sec / 60);
+
+    mod_timer(timer, jiffies + interval_jiff);
 }
 
-static __init int ex_timer_init(void) {
-    timeout_ms = 1000 / HZ; 
-    pr_info("Module loaded. HZ = %d (tick is every %u ms)\n", HZ, timeout_ms);
+static int __init ex_timer_init(void)
+{
+    interval_jiff = secs_to_jiffies(TIMER_INTERVAL_SEC);
+
+    pr_info("Module loaded.\n");
+
 
     timer_setup(&my_timer, my_timer_callback, 0);
-
-    mod_timer(&my_timer, my_timer_callback, 0);
-
+    mod_timer(&my_timer, jiffies  + interval_jiff);
     return 0;
 }
 
-static __exit void ex_timer_exit(void) {
-    del_timer_sync(&my_timer);
+static void __exit ex_timer_exit(void) {   
+    /*Внезапно с версии 6.15 del_timer_sync отсутвует. Так как по умолчанию я использую 6.15.8-200 то это прям вынужденно   */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 15, 0)
+	del_timer_sync(&my_timer);
+#else
+	timer_shutdown_sync(&my_timer);
+#endif
     pr_info("Module is unloaded\n");
-}
-
+ }
 
 module_init(ex_timer_init);
 module_exit(ex_timer_exit);
 
-
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("HW 06 kernel timer examle");
-
+MODULE_DESCRIPTION("HW 06 kernel timer example");
