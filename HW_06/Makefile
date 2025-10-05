@@ -8,3 +8,12 @@ all:
 
 clean:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+
+load: clean all
+	sudo insmod src/ex_timer.ko
+
+unload:
+	sudo rmmod ex_timer
+
+format:
+	clang-format -i src/ex_timer.c
