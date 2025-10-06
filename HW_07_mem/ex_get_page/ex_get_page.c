@@ -1,3 +1,4 @@
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/gfp.h>
 #include <linux/ktime.h>
 #include <linux/mm.h>
@@ -11,15 +12,14 @@ static int __init ex_init(void) {
   s64 delta;
   while (order < 20) { // Limit to reasonable max order
     size = PAGE_SIZE << order;
-    printk(KERN_INFO "get_page: %zu byte\n", size);
+    pr_info("get_page: %zu byte\n", size);
     start = ktime_get();
     ptr = __get_free_pages(GFP_KERNEL, order);
     end = ktime_get();
     delta = ktime_to_ns(ktime_sub(end, start)) / 1000000;
     if (ptr) {
-      printk(KERN_INFO "get_page: SUCCESS\n");
-      printk(KERN_INFO
-             "get_page: %zu byte, %lld ms, type: physical contiguous pages\n",
+      pr_info("get_page: SUCCESS\n");
+      pr_info("get_page: %zu byte, %lld ms, type: physical contiguous pages\n",
              size, delta);
       free_pages(ptr, order);
       order++;
@@ -32,7 +32,6 @@ static int __init ex_init(void) {
 }
 
 static void __exit ex_exit(void) {
-  // All pages freed
 }
 
 module_init(ex_init);
