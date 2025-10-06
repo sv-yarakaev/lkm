@@ -1,3 +1,4 @@
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/ktime.h>
@@ -10,14 +11,14 @@ static int __init ex_init(void) {
     ktime_t start, end;
     s64 delta;
     while (size < (1UL << 32)) {  
-        printk(KERN_INFO "kmalloc: %zu byte\n", size);
+        pr_info("kmalloc: %zu byte\n", size);
         start = ktime_get();
         ptr = kmalloc(size, GFP_KERNEL);
         end = ktime_get();
         delta = ktime_to_ns(ktime_sub(end, start)) / 1000000;  // ns to ms
         if (ptr) {
-            printk(KERN_INFO "kmalloc: SUCCESS\n");
-            printk(KERN_INFO "kmalloc: %zu byte, %lld ms, type: physical contiguous\n", size, delta);
+            pr_info("kmalloc: SUCCESS\n");
+            pr_info("kmalloc: %zu byte, %lld ms, type: physical contiguous\n", size, delta);
             kfree(ptr);
             size *= 2;
         } else {
