@@ -38,6 +38,3 @@ module_exit(ex_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
 MODULE_DESCRIPTION("HW_07 vmalloc allocation");
-
-s
-
