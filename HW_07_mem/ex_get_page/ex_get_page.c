@@ -20,7 +20,7 @@ static int __init ex_init(void) {
     if (ptr) {
       pr_info("get_page: SUCCESS\n");
       pr_info("get_page: %zu byte, %lld ms, type: physical contiguous pages\n",
-             size, delta);
+              size, delta);
       free_pages(ptr, order);
       order++;
     } else {
@@ -31,8 +31,7 @@ static int __init ex_init(void) {
   return 0;
 }
 
-static void __exit ex_exit(void) {
-}
+static void __exit ex_exit(void) {}
 
 module_init(ex_init);
 module_exit(ex_exit);
