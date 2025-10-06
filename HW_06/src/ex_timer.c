@@ -15,15 +15,24 @@ static unsigned long interval_jiff;
 #define TIMER_STOP_SEC 300U    /* сколько секунд печатаем */
 
 static void my_timer_callback(struct timer_list *timer) {
-  counter++;
-  unsigned int elapsed_sec;
-  elapsed_sec = counter * TIMER_INTERVAL_SEC;
+    static unsigned long start_jiffies;
+    unsigned long current_jiffies = jiffies;
 
-  if (elapsed_sec >= TIMER_STOP_SEC)
-    return;
-  pr_info("min=%u: Hello, timer!\n", elapsed_sec / 60);
+    if (start_jiffies == 0) {
+        start_jiffies = current_jiffies;
+    }
 
-  mod_timer(timer, jiffies + interval_jiff);
+    unsigned long end_jiffies = start_jiffies + secs_to_jiffies(TIMER_STOP_SEC);
+
+    // Проверяем, не достигли ли времени остановки
+    if (time_before(current_jiffies, end_jiffies)) {
+        counter++;
+        unsigned int elapsed_sec = jiffies_to_msecs(current_jiffies - start_jiffies) / 1000;
+        pr_info("min=%u: Hello, timer!\n", elapsed_sec / 60);
+        mod_timer(timer, jiffies + interval_jiff);
+    } else {
+        pr_info("Timer stopped after %u seconds\n", TIMER_STOP_SEC);
+    }
 }
 
 static int __init ex_timer_init(void) {
