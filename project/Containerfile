@@ -1,0 +1,10 @@
+FROM registry.fedoraproject.org/fedora:37
+RUN dnf install -y \
+    kernel-devel-6.1.0-0.rc7.git0.1.fc37 \
+    gcc \
+    make \
+    bc \
+    elfutils-libelf-devel \
+    && dnf clean all
+WORKDIR /module
+CMD ["bash"]
