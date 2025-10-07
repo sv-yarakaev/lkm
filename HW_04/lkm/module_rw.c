@@ -1,4 +1,5 @@
-#include <linux/kernel.h>
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <linux/module.h>
 #include <linux/init.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
@@ -79,13 +80,20 @@ static int record_db_add(const char *name, long id)
 {
 	record_db_t *rec = record_db_new(name, id);
 	struct list_head *pos;
+	record_db_t *existing;
+
 	if (!rec)
 		return -ENOMEM;
 
+	/* Check for duplicate id */
 	list_for_each(pos, &g_records) {
-		record_db_t *existing = list_entry(pos, record_db_t, node);
+		existing = list_entry(pos, record_db_t, node);
+		if (existing->id == id) {
+			record_db_free(rec);
+			return -EEXIST; /* Duplicate */
+		}
 		if (rec->id < existing->id) {
-			list_add_tail(&rec->node, pos->prev);
+			list_add_tail(&rec->node, pos);
 			return 0;
 		}
 	}
@@ -114,7 +122,10 @@ static void init_db(void)
 		long id = 100 + (r % 900);
 		get_random_bytes(&r, sizeof(r));
 		const char *nm = random_names[r % NUM_NAMES];
-		record_db_add(nm, id);
+		if (record_db_add(nm, id) == -EEXIST) {
+			i--; /* Retry on duplicate */
+			continue;
+		}
 	}
 	pr_info("rw_db: initialized %d records\n", initial_count);
 }
@@ -153,6 +164,11 @@ static int reader_fn(void *data)
 
 		record_db_t *found = record_db_find_by_id(idx);
 
+		if (found) {
+			pr_info("[R %d] found id=%ld name=%s — exiting\n",
+				id_local, found->id, found->name);
+		}
+
 		/* reader exit section */
 		down(&rmutex);
 		readers_count--;
@@ -161,8 +177,6 @@ static int reader_fn(void *data)
 		up(&rmutex);
 
 		if (found) {
-			pr_info("[R %d] found id=%ld name=%s — exiting\n",
-				id_local, found->id, found->name);
 			break; /* === exit after first success === */
 		} else {
 			pr_info("[R %d] id=%ld not found — waiting\n", id_local, idx);
@@ -233,6 +247,9 @@ static int writer_fn(void *data)
 static int __init rw_db_init(void)
 {
 	int i;
+	size_t rsize = sizeof(struct task_struct *) * readers;
+	size_t wsize = sizeof(struct task_struct *) * writers;
+
 	pr_info("rw_db: init (readers=%d writers=%d count=%d)\n",
 		readers, writers, initial_count);
 
@@ -243,32 +260,45 @@ static int __init rw_db_init(void)
 
 	init_db();
 
-	reader_tasks = kcalloc(readers, sizeof(struct task_struct *), GFP_KERNEL);
-	writer_tasks = kcalloc(writers, sizeof(struct task_struct *), GFP_KERNEL);
-	if (!reader_tasks || !writer_tasks)
+	reader_tasks = kmalloc(rsize, GFP_KERNEL);
+	if (!reader_tasks)
 		goto err_alloc;
+	writer_tasks = kmalloc(wsize, GFP_KERNEL);
+	if (!writer_tasks)
+		goto err_free_readers;
 
+	memset(reader_tasks, 0, rsize);
+	memset(writer_tasks, 0, wsize);
+
+	/* создаём читателей */
 	for (i = 0; i < readers; i++) {
 		char name[32];
 		snprintf(name, sizeof(name), "rw_reader_%d", i + 1);
 		reader_tasks[i] = kthread_run(reader_fn, (void *)(long)(i + 1), "%s", name);
-		if (IS_ERR(reader_tasks[i]))
+		if (IS_ERR(reader_tasks[i])) {
+			pr_err("rw_db: failed to create reader %d\n", i + 1);
 			reader_tasks[i] = NULL;
+		}
 	}
 
+	/* создаём писателей */
 	for (i = 0; i < writers; i++) {
 		char name[32];
 		snprintf(name, sizeof(name), "rw_writer_%d", i + 1);
 		writer_tasks[i] = kthread_run(writer_fn, (void *)(long)(i + 1), "%s", name);
-		if (IS_ERR(writer_tasks[i]))
+		if (IS_ERR(writer_tasks[i])) {
+			pr_err("rw_db: failed to create writer %d\n", i + 1);
 			writer_tasks[i] = NULL;
+		}
 	}
 
+	pr_info("rw_db: module initialized successfully\n");
 	return 0;
 
-err_alloc:
+err_free_readers:
 	kfree(reader_tasks);
-	kfree(writer_tasks);
+	reader_tasks = NULL;
+err_alloc:
 	free_db();
 	return -ENOMEM;
 }
@@ -276,30 +306,13 @@ err_alloc:
 static void __exit rw_db_exit(void)
 {
 	int i;
-	pr_info("rw_db: exit — stopping threads\n");
-	reader_stop = true;
 
+	pr_info("rw_db: exit — stopping threads\n");
+
+	reader_stop = true;
 	wake_up_all(&wq);
 	msleep(100);
-	
-	/* if (reader_tasks) {
-		for (i = 0; i < readers; i++)
-			if (reader_tasks[i])
-				kthread_stop(reader_tasks[i]);
-		kfree(reader_tasks);
-	}
 
-	if (writer_tasks) {
-		for (i = 0; i < writers; i++)
-			if (writer_tasks[i])
-				kthread_stop(writer_tasks[i]);
-		kfree(writer_tasks);
-	}
-
-	wake_up_all(&wq);
-	free_db();
-	pr_info("rw_db: module unloaded\n");
-	*/
 	if (reader_tasks) {
 		for (i = 0; i < readers; i++) {
 			if (reader_tasks[i]) {
@@ -309,7 +322,6 @@ static void __exit rw_db_exit(void)
 			}
 		}
 		kfree(reader_tasks);
-		reader_tasks = NULL;
 	}
 
 	if (writer_tasks) {
@@ -321,7 +333,6 @@ static void __exit rw_db_exit(void)
 			}
 		}
 		kfree(writer_tasks);
-		writer_tasks = NULL;
 	}
 
 	free_db();
@@ -334,5 +345,4 @@ module_exit(rw_db_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
-MODULE_DESCRIPTION("Reader-Writer DB kernel module example");
-
+MODULE_DESCRIPTION("Reader-Writer example");
