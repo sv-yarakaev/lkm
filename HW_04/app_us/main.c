@@ -35,11 +35,19 @@ static record_db_t *record_db_new(const char *name, long id) {
 
 static int record_db_add(const char *name, long id) {
   record_db_t *rec = record_db_new(name, id);
-  if (!rec)
-    return -1;
+    if (!rec)
+        return -1;
 
-  list_add_tail(&rec->node, &g_records);
-  return 0;
+    struct list_head *pos;
+    list_for_each(pos, &g_records) {
+        record_db_t *existing = list_entry(pos, record_db_t, node);
+        if (rec->id < existing->id) {
+            list_add(&rec->node, pos->prev);
+            return 0;
+        }
+    }
+    list_add_tail(&rec->node, &g_records);
+    return 0;
 }
 
 static void record_db_free(record_db_t *rec) {
@@ -54,7 +62,7 @@ long *current_ids;
 
 #define NUM_NAMES 24
 #define NAME_LENGTH 20
-#define READERS 2
+#define READERS 5 
 #define WRITERS 2
 
 static void *writer_thread(void *args);
@@ -72,7 +80,7 @@ const char *random_names[] = {
     "Sam",   "Tina",  "Ulysses", "Victoria", "William", "Zoe"};
 
 static void init_db() {
-  current_ids = malloc(sizeof(long) * count);
+  //current_ids = malloc(sizeof(long) * count);
   srand(time(NULL));
   for (int i = 0; i < count; i++) {
     int name_index = rand() % NUM_NAMES;
@@ -83,8 +91,7 @@ static void init_db() {
     } else {
       continue;
     }
-    long id = 1000 + rand() % 9000;
-    current_ids[i] = id;
+    long id = 100 + rand() % 900;
     record_db_add(name, id);
     free(name);
   }
@@ -96,7 +103,6 @@ static void free_db() {
     list_del(&pos->node);
     record_db_free(pos);
   }
-  free(current_ids);
 }
 
 static record_db_t *record_db_find_by_id(long id) {
@@ -105,6 +111,9 @@ static record_db_t *record_db_find_by_id(long id) {
   list_for_each_entry(pos, &g_records, node) {
     if (pos->id == id) {
       return pos;
+    }
+    if (pos->id > id) {
+      return NULL;
     }
   }
   return NULL;
@@ -168,7 +177,7 @@ static void *reader_thread(void *args) {
   free(args);
 
   while (1) {
-    long idx = 1000 + rand_r(&seed) % 9000;
+    long idx = 100 + rand_r(&seed) % 900;
 
     pthread_mutex_lock(&rmutex);
     readers_count++;
@@ -201,13 +210,14 @@ static void *reader_thread(void *args) {
 
 static void *writer_thread(void *args) {
   int id_local = *(int *)args;
+  free(args);
   unsigned int seed =
       (unsigned int)time(NULL) ^ (unsigned int)(uintptr_t)pthread_self();
 
   while (1) {
 
     // >>> ВХОД В КРИТИЧЕСКУЮ СЕКЦИЮ ДЛЯ ЗАПИСИ >>>
-    long idx = 1000 + rand_r(&seed) % 9000;
+    long idx = 100 + rand_r(&seed) % 900;
     pthread_mutex_lock(&rw_mutex);
 
     // >>> НАЧАЛО ЗАПИСИ >>>
@@ -239,6 +249,9 @@ int main(void) {
   for (int i = 0; i < READERS; i++) {
     printf("Create reader\n");
     int *id = malloc(sizeof(int));
+    if (!id) {
+      return 1;
+    }
     *id = i + 1;
     if (pthread_create(&readers[i], NULL, reader_thread, id)) {
       perror("Cannot create reader");
@@ -248,9 +261,12 @@ int main(void) {
 
   for (int i = 0; i < WRITERS; i++) {
     printf("Create writer\n");
-    int *id = malloc(sizeof(int));
-    *id = i + 1;
-    if (pthread_create(&writers[i], NULL, writer_thread, id)) {
+    int *id_w = malloc(sizeof(int));
+    if (!id_w) {
+      return 1;
+    }
+    *id_w = i + 1;
+    if (pthread_create(&writers[i], NULL, writer_thread, id_w)) {
       perror("Cannot create writer");
       return 1;
     }
@@ -264,7 +280,7 @@ int main(void) {
   // Ожидание завершения всех писателей
   for (int i = 0; i < WRITERS; i++) {
     pthread_join(writers[i], NULL);
-  }
+  } 
   print_db();
 
   free_db();
