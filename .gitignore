@@ -58,3 +58,6 @@ tags
 *.swp
 *.swp*
 *cache*
+HW_04/app_us/.clangd
+HW_04/app_us/app_us
+HW_04/lkm/.clangd
