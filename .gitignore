@@ -51,8 +51,10 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-temp_files/*
-
+temp_files/
+*compile_commands.json*
+HW_04/compile_commands.json
+tags
 *.swp
 *.swp*
 *cache*
