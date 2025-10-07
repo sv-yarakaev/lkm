@@ -232,8 +232,6 @@ static int writer_fn(void *data)
 static int __init rw_db_init(void)
 {
 	int i;
-	size_t rsize = sizeof(struct task_struct *) * readers;
-	size_t wsize = sizeof(struct task_struct *) * writers;
 
 	pr_info("init (readers=%d writers=%d count=%d)\n",
 		readers, writers, initial_count);
