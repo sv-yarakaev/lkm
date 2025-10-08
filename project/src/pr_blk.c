@@ -28,7 +28,6 @@
 
 
 
-#define SECTOR_SIZE 512
 #define DEVICE_NAME "testblk"
 #define CAPACITY_SECTORS (112 * PAGE_SIZE / SECTOR_SIZE)  // Примерно 448 KiB
 
@@ -170,7 +169,7 @@ static int __init myblock_driver_init(void) {
     blk_queue_logical_block_size(block_device->queue, SECTOR_SIZE);
 
     // Инициализация gendisk с использованием blk_alloc_disk
-    block_device->gdisk = blk_alloc_disk(block_device->queue);
+    block_device->gdisk = blk_alloc_disk(1);
     if (!block_device->gdisk) {
         err = -ENOMEM;
         pr_err("Failed to alloc disk\n");
@@ -237,3 +236,4 @@ module_exit(myblock_driver_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
+MODULE_DESCRIPTION("Block device for test in the RAM");
