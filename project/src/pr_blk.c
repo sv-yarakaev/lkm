@@ -1,3 +1,4 @@
+#include "linux/numa.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/module.h>
@@ -16,6 +17,7 @@
 #include <linux/hdreg.h>
 #include <linux/buffer_head.h>
 #include <linux/vmalloc.h>
+#include <linux/version.h>
 /*
 1.Регистрацию major номера.
 2. Инициализацию очереди запросов с blk-mq (глубина 128, с поддержкой слияния запросов).
@@ -26,6 +28,10 @@
 */
 
 
+/* Проверка версии ядра */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0) || LINUX_VERSION_CODE > KERNEL_VERSION(6,1,255)
+#warning "Этот модуль предназначен для ядра 6.1.x (например, 6.1.130)"
+#endif
 
 
 #define DEVICE_NAME "testblk"
@@ -158,18 +164,18 @@ static int __init myblock_driver_init(void) {
     }
 
     // Инициализация очереди
-    block_device->queue = blk_mq_init_queue(&block_device->tag_set);
-    if (IS_ERR(block_device->queue)) {
-        err = PTR_ERR(block_device->queue);
-        pr_err("Failed to init queue: %d\n", err);
-        goto err_free_tag_set;
-    }
+    // block_device->queue = blk_mq_init_queue(&block_device->tag_set);
+    // if (IS_ERR(block_device->queue)) {
+    //     err = PTR_ERR(block_device->queue);
+    //     pr_err("Failed to init queue: %d\n", err);
+    //     goto err_free_tag_set;
+    // }
 
     block_device->queue->queuedata = block_device;
     blk_queue_logical_block_size(block_device->queue, SECTOR_SIZE);
 
     // Инициализация gendisk с использованием blk_alloc_disk
-    block_device->gdisk = blk_alloc_disk(1);
+    block_device->gdisk = blk_alloc_disk(NUMA_NO_NODE);
     if (!block_device->gdisk) {
         err = -ENOMEM;
         pr_err("Failed to alloc disk\n");
