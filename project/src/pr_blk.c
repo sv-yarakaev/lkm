@@ -1,10 +1,7 @@
-#include "linux/numa.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include "asm-generic/int-ll64.h"
-#include "linux/radix-tree.h"
-#include "linux/spinlock_types.h"
-
+#include <linux/radix-tree.h>
+#include <linux/spinlock_types.h>
 #include <linux/debugfs.h>
 #include <linux/module.h>
 #include <linux/blkdev.h>
@@ -16,11 +13,10 @@
 #include <linux/version.h>
 #include <linux/blk_types.h>
 #include <linux/list.h>
-#include "asm-generic/errno-base.h"
-#include "linux/err.h"
-#include "linux/gfp_types.h"
-#include "linux/mutex.h"
-#include "linux/spinlock.h"
+#include <asm-generic/errno-base.h>
+#include <linux/gfp_types.h>
+#include <linux/mutex.h>
+#include <linux/spinlock.h>
 
 /* Проверка версии ядра */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0) || LINUX_VERSION_CODE > KERNEL_VERSION(6,1,255)
@@ -35,8 +31,8 @@
 
 static unsigned long rd_size = 4096;
 
-static int dev_major;
-static struct block_dev *block_device;
+//static int dev_major;
+//static struct block_dev *block_device;
 static struct dentry *bd_debugfs_dir;
 static int max_part = 1;
 
@@ -57,6 +53,10 @@ static const struct block_device_operations bd_fops = {
 	.submit_bio =		bd_submit_bio,
 	.rw_page =		bd_rw_page,
 };
+
+static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op) {
+    return 0;
+}
 
 /*
  * bd_submit_bio -- точка входа I/O 
@@ -179,9 +179,7 @@ out_free_dev:
     
     return error;
 } 
-static void bd_probe(dev_t dev){
 
-}
 
 
 static int __init mblock_driver_init(void)
