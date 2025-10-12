@@ -1,5 +1,8 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#include "asm-generic/bug.h"
+
+#include <linux/init.h>
 #include <linux/radix-tree.h>
 #include <linux/spinlock_types.h>
 #include <linux/debugfs.h>
@@ -47,6 +50,11 @@ struct block_dev {
 };
 static void bd_submit_bio(struct bio* bio);  // todo убрать в заголовочный файл
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op); // todo убрать в заголовочный файл
+static int brd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
+static void copy_from_brd(void *dst, struct block_dev *bd, sector_t sector, size_t n);
+static int copy_to_bd_setup(struct block_dev *bd, sector_t sector, size_t n, gfp_t gfp);
+static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp);
+static struct page *brd_lookup_page(struct block_dev *bd, sector_t sector);
 
 static const struct block_device_operations bd_fops = {
 	.owner =		THIS_MODULE,
@@ -59,8 +67,151 @@ static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *p
 }
 
 /*
+bd — RAM-диск (struct brd_device), содержащий radix_tree_root bd_pages;
+sector — номер сектора, куда собираются писать данные.
+gfp — флаги аллокации (GFP_NOIO, GFP_NOWAIT, и т.п.), определяют, можно ли спать при выделении памяти.
+*/
+static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp)
+{
+    //idx — индекс страницы (в единицах страниц), вычисляется из сектора позже.
+	pgoff_t idx;
+    // указатель на страницу, если она найдена или выделена.
+	struct page *page;
+	int ret = 0;
+    //Проверка, существует ли уже страница
+	page = brd_lookup_page(bd, sector);
+	if (page)
+		return 0;
+    /*
+   alloc_page() — выделяет физическую страницу памяти (struct page).
+    Флаги:
+    __GFP_ZERO — заполняет страницу нулями (чтобы содержимое RAM-диска было изначально чистым).
+    __GFP_HIGHMEM — разрешает аллокацию страниц в зоне HIGHMEM (если архитектура поддерживает).
+    Если памяти нет → -ENOMEM.
+    */
+	page = alloc_page(gfp | __GFP_ZERO | __GFP_HIGHMEM);
+	if (!page)
+		return -ENOMEM;
+/*
+radix_tree_maybe_preload() заранее резервирует память для внутренних узлов дерева (чтобы не делать аллокацию под спинлоком).
+*/
+	if (radix_tree_maybe_preload(gfp)) {
+		__free_page(page);
+		return -ENOMEM;
+	}
+/*Вычисляем индекс страницы:
+PAGE_SECTORS_SHIFT = PAGE_SHIFT - SECTOR_SHIFT (обычно 12 - 9 = 3)
+т.е. idx = sector / 8 (одна страница = 8 секторов)
+Сохраняем page->index = idx — чтобы знать, какому смещению соответствует страница.*/
+	spin_lock(&bd->bd_lock);
+	idx = sector >> PAGE_SECTORS_SHIFT;
+	page->index = idx;
+    /*
+    radix_tree_insert() вставляет page под ключ idx в дерево brd->brd_pages.
+    Если вставка удачна:
+    Увеличиваем счётчик brd_nr_pages — всего страниц в RAM-диске.
+    Если ошибка:
+    Освобождаем только что выделенную страницу (__free_page(page)).
+    Проверяем, почему:
+    Если страница с таким индексом всё-таки уже появилась — возможно, конкурентная вставка → просто lookup.
+    Если lookup не возвращает страницу — ошибка аллокации.
+    Если index не совпадает — повреждение данных (-EIO).
+    */
+	if (radix_tree_insert(&bd->bd_pages, idx, page)) {
+		__free_page(page);
+		page = radix_tree_lookup(&bd->bd_pages, idx);
+		if (!page)
+			ret = -ENOMEM;
+		else if (page->index != idx)
+			ret = -EIO;
+	} else {
+		bd->bd_nr_pages++;
+	}
+	spin_unlock(&bd->bd_lock);
+
+	radix_tree_preload_end();
+	return ret;
+}
+
+
+/*
+bd — указатель на RAM-диск (struct block_dev), содержащий radix-дерево с данными.
+sector — начальный сектор операции (позиция в логических секторах).
+n — количество байт, которые будут записаны.
+gfp — флаги выделения памяти (GFP_NOIO, GFP_NOWAIT, и т.п.) для безопасной аллокации в контексте блочного драйвера.
+*/
+static int copy_to_bd_setup(struct block_dev *bd, sector_t sector,
+			     size_t n, gfp_t gfp) {
+    
+    /*
+    PAGE_SECTORS = PAGE_SIZE / SECTOR_SIZE (например, 4096 / 512 = 8).
+    (sector & (PAGE_SECTORS - 1)) даёт номер сектора внутри текущей страницы (0–7).
+    << SECTOR_SHIFT (обычно << 9) преобразует этот индекс в байтовое смещение внутри страницы.
+    */
+    unsigned int offset = (sector & (PAGE_SECTORS-1)) << SECTOR_SHIFT;
+	size_t copy;
+	int ret;
+
+    /* PAGE_SIZE - offset — сколько байт помещается в текущую страницу, начиная с offset.
+        min_t() гарантирует, что мы не выйдем за пределы данных (n). */
+	copy = min_t(size_t, n, PAGE_SIZE - offset);
+
+	ret = bd_insert_page(bd, sector, gfp);
+	if (ret)
+		return ret;
+    // Если данные выходят за границу страницы — выделяем вторую
+	if (copy < n) {
+		sector += copy >> SECTOR_SHIFT;
+		ret = bd_insert_page(bd, sector, gfp);
+	}
+	return ret;
+
+        
+}
+
+
+/* функция выполняет одну операцию ввода/вывода для одного сегмента bio (bvec).
+    bd — указатель на структуру RAM-диска (struct brd_device), содержащую radix-дерево страниц и метаданные.
+    page — страница (структура struct page) из BIO (то есть, куда писать или откуда читать).
+    len — длина сегмента в байтах.
+    off — смещение внутри этой страницы.
+    opf — флаги операции (REQ_OP_READ, REQ_OP_WRITE, REQ_NOWAIT, и др.).
+    sector — сектор устройства, с которого начинается этот сегмент.
+*/
+static int brd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, 
+    unsigned int off, blk_opf_t opf, sector_t sector) {
+        int err = 0;
+        void *mem; 
+        /* Макрос op_is_write() проверяет тип операции (REQ_OP_WRITE, REQ_OP_FLUSH, и др.). */
+        if (op_is_write(opf)) {  
+            /*
+            Если BIO помечено REQ_NOWAIT, то нельзя блокироваться → используем GFP_NOWAIT.
+            Иначе — GFP_NOIO, чтобы запретить I/O при аллокации (во избежание рекурсии в блоковый слой)
+            */
+            gfp_t gfp = opf & REQ_NOWAIT ? GFP_NOWAIT : GFP_NOIO;
+            err = copy_to_brd_setup(bd, sector, len, gfp);
+            if (err) goto out;
+           
+        }
+        mem = kmap_atomic(page);
+        if (!op_is_write(opf)) {
+            copy_from_brd(mem + off, bd, sector, len);
+		    flush_dcache_page(page);
+        } else {
+            flush_dcache_page(page);
+		    copy_to_brd(bd, mem + off, sector, len);
+        }
+        kunmap_atomic(mem);
+
+out:
+        return err;
+
+}
+
+
+/*
  * bd_submit_bio -- точка входа I/O 
- * - вызывается блочным слоем при приходе BIO
+ * - вызывается block layer при приходе BIO
  * - перебирает сегменты bio_for_each_segment и вызывает brd_do_bvec
  * - проверки: выравнивание (offset и len должны быть кратны SECTOR_SIZE)
  * - особое поведение: если copy_to_brd_setup вернул -ENOMEM и био с REQ_NOWAIT,
@@ -68,6 +219,37 @@ static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *p
  *   которые не хотят ждать.
  */
 static void bd_submit_bio(struct bio* bio) {
+    /*
+    Извлекаем bd_device через связанное block_device (bio->bi_bdev) → gendisk → private_data. 
+    То есть каждый gendisk хранит указатель на структуру bd, 
+    и здесь мы получаем контекст устройства, на котором выполняется этот BIO.
+    */
+    struct block_dev *bd = bio->bi_bdev->bd_disk->private_data;
+    
+    
+    /*
+    Читаем стартовый сектор операции из BIO iterator. Это сектор на устройстве, с которого начинается I/O. 
+    Дальше при обходе сегментов мы будем увеличивать sector на число секторов в каждом сегменте.
+    */
+    sector_t sector = bio->bi_iter.bi_sector;
+    struct bio_vec bvec;
+    struct bvec_iter iter;
+    bio_for_each_segment(bvec, bio, iter) {
+        unsigned int len = bvec.bv_len;
+        int err;
+        WARN_ON_ONCE((bvec.bv_offset & (SECTOR_SIZE -1)) || (len & (SECTOR_SIZE -1)));  // retuen EIO better
+        /*
+        обработать одну векторную часть BIO. Передаём:
+        bd — наше устройство,
+        bvec.bv_page — страница фронтенда (куда читать или откуда писать),
+        len — длина в байтах,
+        bvec.bv_offset — смещение в page,
+        bio->bi_opf — operation flags (read/write, plus REQ_NOWAIT и др.),
+        sector — сектор на устройстве, соответствующий началу этого сегмента.
+        brd_do_bvec сделает необходимый kmap_atomic, подготовку backing-страниц (для записи), копирование и т.п.
+        */
+        err = bd_do_bvec(bd, bvec.bv_page, len, bvec.bv_offset, bio->bi_opf, sector);
+
 
 }
 
@@ -165,7 +347,7 @@ static int bd_alloc(int n) {
     blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, disk->queue);
     blk_queue_flag_set(QUEUE_FLAG_NOWAIT, disk->queue);
     
-    error = add_disk(disk);
+    error = add_disk(disk);// завершение регистрации
     if (error)   goto cleanup_disk;
 
     return 0;
@@ -207,5 +389,5 @@ module_exit(mblock_driver_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
-MODULE_DESCRIPTION("RAM-backed block device for kernel 6.1.x");
+MODULE_DESCRIPTION("RAM-backed block device for kernel 6.1.130");
 MODULE_VERSION("1.1");
