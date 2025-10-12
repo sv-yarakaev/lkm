@@ -545,6 +545,7 @@ static void brd_cleanup(void)
 
 static int __init mblock_driver_init(void)
 {
+    bd_debugfs_dir = debugfs_create_dir("ramdisk_pages", NULL);
     int error = 0;
     int major = register_blkdev(BDISKMAJOR, DEVICE_NAME);
     if (major < 0) {
