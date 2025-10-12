@@ -1,25 +1,21 @@
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-#include "asm-generic/bug.h"
-
 #include <linux/init.h>
-#include <linux/radix-tree.h>
-#include <linux/spinlock_types.h>
-#include <linux/debugfs.h>
+#include <linux/initrd.h>
 #include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/major.h>
 #include <linux/blkdev.h>
-#include <linux/blk-mq.h>
-#include <linux/hdreg.h>
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/vmalloc.h>
-#include <linux/version.h>
-#include <linux/blk_types.h>
-#include <linux/list.h>
-#include <asm-generic/errno-base.h>
-#include <linux/gfp_types.h>
+#include <linux/bio.h>
+#include <linux/highmem.h>
 #include <linux/mutex.h>
-#include <linux/spinlock.h>
+#include <linux/pagemap.h>
+#include <linux/radix-tree.h>
+#include <linux/fs.h>
+#include <linux/slab.h>
+#include <linux/backing-dev.h>
+#include <linux/debugfs.h>
+#include <linux/version.h>
+#include <linux/uaccess.h>
 
 /* Проверка версии ядра */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0) || LINUX_VERSION_CODE > KERNEL_VERSION(6,1,255)
@@ -32,7 +28,7 @@
 #define CAPACITY_SECTORS (DISK_SIZE_BYTES / SECTOR_SIZE)  // 896 секторов
 #define BDISKMAJOR		1
 
-static unsigned long rd_size = 4096;
+//static unsigned long rd_size = 4096;
 
 //static int dev_major;
 //static struct block_dev *block_device;
@@ -50,11 +46,16 @@ struct block_dev {
 };
 static void bd_submit_bio(struct bio* bio);  // todo убрать в заголовочный файл
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op); // todo убрать в заголовочный файл
-static int brd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
-static void copy_from_brd(void *dst, struct block_dev *bd, sector_t sector, size_t n);
+static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
+static void copy_from_bd(void *dst, struct block_dev *bd, sector_t sector, size_t n);
 static int copy_to_bd_setup(struct block_dev *bd, sector_t sector, size_t n, gfp_t gfp);
 static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp);
-static struct page *brd_lookup_page(struct block_dev *bd, sector_t sector);
+static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector);
+static void copy_from_bd(void *dst, struct block_dev *brd, sector_t sector, size_t n);
+static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n);
+
+
+
 
 static const struct block_device_operations bd_fops = {
 	.owner =		THIS_MODULE,
@@ -63,8 +64,31 @@ static const struct block_device_operations bd_fops = {
 };
 
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op) {
-    return 0;
+    struct block_dev *bd = bdev->bd_disk->private_data;
+	int err;
+
+	if (PageTransHuge(page))
+		return -ENOTSUPP;
+	err = bd_do_bvec(bd, page, PAGE_SIZE, 0, op, sector);
+	page_endio(page, op_is_write(op), err);
+	return err;
 }
+/*
+bd_insert_page() — чтобы проверить, существует ли уже страница;
+в bd_do_bvec() — при чтении или записи данных, чтобы получить страницу, в которую нужно копировать данные;
+в copy_to_brd() / copy_from_brd() — при фактическом копировании данных.*/
+static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector)
+{
+	pgoff_t idx = sector >> PAGE_SECTORS_SHIFT;
+	struct page *page;
+
+	rcu_read_lock();
+	page = radix_tree_lookup(&bd->bd_pages, idx);
+	rcu_read_unlock();
+
+	return page;
+}
+
 
 /*
 bd — RAM-диск (struct brd_device), содержащий radix_tree_root bd_pages;
@@ -79,7 +103,7 @@ static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp)
 	struct page *page;
 	int ret = 0;
     //Проверка, существует ли уже страница
-	page = brd_lookup_page(bd, sector);
+	page = bd_lookup_page(bd, sector);
 	if (page)
 		return 0;
     /*
@@ -132,6 +156,84 @@ PAGE_SECTORS_SHIFT = PAGE_SHIFT - SECTOR_SHIFT (обычно 12 - 9 = 3)
 	radix_tree_preload_end();
 	return ret;
 }
+/*
+copy_from_bd() выполняет чтение из виртуального RAM-диска в буфер, предоставленный подсистемой ввода-вывода (bio).
+dst — адрес назначения (куда копировать данные, например bio-буфер).
+brd — RAM-диск (struct brd_device).
+sector — сектор, с которого читаем.
+n — количество байт, которые нужно прочитать.*/
+static void copy_from_bd(void *dst, struct block_dev *brd,
+			sector_t sector, size_t n)
+{
+	struct page *page;
+	void *src;
+    /*
+    Вычисляем байтовое смещение в первой странице.
+    PAGE_SECTORS = PAGE_SIZE / 512 (обычно 8)
+    SECTOR_SHIFT = 9 (512 байт)
+    */
+	unsigned int offset = (sector & (PAGE_SECTORS-1)) << SECTOR_SHIFT;
+	size_t copy;
+/*PAGE_SIZE - offset — сколько байт осталось в текущей странице.
+copy — сколько реально скопируем сейчас.*/
+	copy = min_t(size_t, n, PAGE_SIZE - offset);
+
+/*brd_lookup_page() ищет страницу в brd->brd_pages (radix-tree).
+Если страница существует — возвращает struct page *.
+Если нет — NULL.
+То есть, если мы читаем секторы, которые ещё не записывались — там нет страниц, и мы должны вернуть нули.*/
+	page = bd_lookup_page(brd, sector);
+	if (page) {
+		src = kmap_atomic(page);
+		memcpy(dst, src + offset, copy);
+		kunmap_atomic(src);
+	} else
+		memset(dst, 0, copy);
+
+	if (copy < n) {
+		dst += copy;
+		sector += copy >> SECTOR_SHIFT;
+		copy = n - copy;
+		page = bd_lookup_page(brd, sector);
+		if (page) {
+			src = kmap_atomic(page);
+			memcpy(dst, src, copy);
+			kunmap_atomic(src);
+		} else
+			memset(dst, 0, copy);
+	}
+}
+
+static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n){
+    struct page *page;
+	void *dst;
+
+    /*Вычисляется смещение в первой странице (аналогично copy_from_brd()).
+PAGE_SECTORS = PAGE_SIZE / 512 — количество секторов в одной странице.
+SECTOR_SHIFT = 9 (512 байт).*/
+	unsigned int offset = (sector & (PAGE_SECTORS-1)) << SECTOR_SHIFT;
+	size_t copy;
+
+	copy = min_t(size_t, n, PAGE_SIZE - offset);
+	page = bd_lookup_page(bd, sector);
+	BUG_ON(!page);
+
+	dst = kmap_atomic(page);
+	memcpy(dst + offset, src, copy);
+	kunmap_atomic(dst);
+
+	if (copy < n) {
+		src += copy;
+		sector += copy >> SECTOR_SHIFT;
+		copy = n - copy;
+		page = bd_lookup_page(bd, sector);
+		BUG_ON(!page);
+
+		dst = kmap_atomic(page);
+		memcpy(dst, src, copy);
+		kunmap_atomic(dst);
+	}
+}
 
 
 /*
@@ -178,7 +280,7 @@ static int copy_to_bd_setup(struct block_dev *bd, sector_t sector,
     opf — флаги операции (REQ_OP_READ, REQ_OP_WRITE, REQ_NOWAIT, и др.).
     sector — сектор устройства, с которого начинается этот сегмент.
 */
-static int brd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, 
+static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, 
     unsigned int off, blk_opf_t opf, sector_t sector) {
         int err = 0;
         void *mem; 
@@ -189,17 +291,17 @@ static int brd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len
             Иначе — GFP_NOIO, чтобы запретить I/O при аллокации (во избежание рекурсии в блоковый слой)
             */
             gfp_t gfp = opf & REQ_NOWAIT ? GFP_NOWAIT : GFP_NOIO;
-            err = copy_to_brd_setup(bd, sector, len, gfp);
+            err = copy_to_bd_setup(bd, sector, len, gfp);
             if (err) goto out;
            
         }
         mem = kmap_atomic(page);
         if (!op_is_write(opf)) {
-            copy_from_brd(mem + off, bd, sector, len);
+            copy_from_bd(mem + off, bd, sector, len);
 		    flush_dcache_page(page);
         } else {
             flush_dcache_page(page);
-		    copy_to_brd(bd, mem + off, sector, len);
+		    copy_to_bd(bd, mem + off, sector, len);
         }
         kunmap_atomic(mem);
 
@@ -217,6 +319,18 @@ out:
  * - особое поведение: если copy_to_brd_setup вернул -ENOMEM и био с REQ_NOWAIT,
  *   то вызывается bio_wouldblock_error(bio) — правильная реакция для frontends
  *   которые не хотят ждать.
+ 
+ Получить контекст устройства (bd) и стартовый сектор из BIO.
+    Перебрать все сегменты BIO (bio_for_each_segment). Для каждого сегмента:
+    проверить выравнивание (WARN_ON_ONCE — диагностически);
+    вызвать bd_do_bvec, который:
+    при записи — подготовит backing-страницы (alloc_page + radix tree insert), затем скопирует данные;
+    при чтении — скопирует данные из backing-страниц в page (или заполнит нулями, если страница отсутствует).
+    если brd_do_bvec вернул ошибку:
+    если это -ENOMEM и BIO был REQ_NOWAIT — ответить bio_wouldblock_error;
+    в противном случае — bio_io_error.
+    сдвинуть сектор на длину сегмента.
+    Если все сегменты успешно обработаны — вызвать bio_endio(bio).
  */
 static void bd_submit_bio(struct bio* bio) {
     /*
@@ -249,7 +363,17 @@ static void bd_submit_bio(struct bio* bio) {
         brd_do_bvec сделает необходимый kmap_atomic, подготовку backing-страниц (для записи), копирование и т.п.
         */
         err = bd_do_bvec(bd, bvec.bv_page, len, bvec.bv_offset, bio->bi_opf, sector);
-
+        if (err) {
+			if (err == -ENOMEM && bio->bi_opf & REQ_NOWAIT) {
+				bio_wouldblock_error(bio);
+				return;
+			}
+			bio_io_error(bio);
+			return;
+		}
+		sector += len >> SECTOR_SHIFT;
+	}
+	bio_endio(bio);
 
 }
 
@@ -362,7 +486,62 @@ out_free_dev:
     return error;
 } 
 
+#define FREE_BATCH 16
+static void bd_free_pages(struct block_dev *bd)
+{
+	unsigned long pos = 0;
+	struct page *pages[FREE_BATCH];
+	int nr_pages;
 
+	do {
+		int i;
+
+		nr_pages = radix_tree_gang_lookup(&bd->bd_pages,
+				(void **)pages, pos, FREE_BATCH);
+
+		for (i = 0; i < nr_pages; i++) {
+			void *ret;
+
+			BUG_ON(pages[i]->index < pos);
+			pos = pages[i]->index;
+			ret = radix_tree_delete(&bd->bd_pages, pos);
+			BUG_ON(!ret || ret != pages[i]);
+			__free_page(pages[i]);
+		}
+
+		pos++;
+
+		
+		cond_resched();
+
+		/*
+		 * This assumes radix_tree_gang_lookup always returns as
+		 * many pages as possible. If the radix-tree code changes,
+		 * so will this have to.
+		 */
+	} while (nr_pages == FREE_BATCH);
+}
+
+static void bd_free_device(struct block_dev *brd)
+{
+	mutex_lock(&bd_devices_mutex);
+	list_del(&brd->bd_list);
+	mutex_unlock(&bd_devices_mutex);
+	kfree(brd);
+}
+static void brd_cleanup(void)
+{
+	struct block_dev *bd, *next;
+
+	debugfs_remove_recursive(bd_debugfs_dir);
+
+	list_for_each_entry_safe(bd, next, &bd_devices, bd_list) {
+		del_gendisk(bd->gdisk);
+		put_disk(bd->gdisk);
+		bd_free_pages(bd);
+		bd_free_device(bd);
+	}
+}
 
 static int __init mblock_driver_init(void)
 {
@@ -372,8 +551,9 @@ static int __init mblock_driver_init(void)
         error = -EIO;
         return major;
     }
-    bd_alloc(0);
-
+    for (int i = 0; i < 3; i++)
+		bd_alloc(i);
+    pr_info("module loaded\n");
     return 0;
 
 
@@ -382,6 +562,8 @@ static int __init mblock_driver_init(void)
 static void __exit mblock_driver_exit(void)
 {
     unregister_blkdev(BDISKMAJOR, DEVICE_NAME);
+    brd_cleanup();
+	pr_info("module unloaded\n");
 }
 
 module_init(mblock_driver_init);
