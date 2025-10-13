@@ -199,11 +199,11 @@ static const struct block_device_operations bd_fops = {
 #define BRD_GET_UPTIME_MS  _IOR(BRD_IOC_MAGIC, 1, __u64)
 #define BRD_DUMP _IOWR(BRD_IOC_MAGIC, 3, struct brd_dump_args)
 struct brd_dump_args {
-    __u64 sector;      // с какого сектора читать
-    __u32 count;       // сколько секторов (макс. 1024)
-    __u64 buf_ptr;     // указатель на буфер в userspace (uintptr_t)
+    __u64 sector;
+    __u32 count;
+    __u32 __pad;   // ← явный padding!
+    __u64 buf_ptr;
 };
-
 static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg) {
     struct block_dev *bd = bdev->bd_disk->private_data;
     int err = 0;
@@ -229,6 +229,7 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
             err = -EFAULT;
         break;
     }
+
     case BRD_DUMP: {
         struct brd_dump_args args;
         void __user *user_buf;
@@ -237,18 +238,24 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
         unsigned int bytes;
         char *kbuf;
         int ret = 0;
-
+        
+        printk(KERN_INFO "arg ptr = 0x%lx\n", arg);
         if (copy_from_user(&args, (void __user *)arg, sizeof(args)))
             return -EFAULT;
 
         start_sec = args.sector;
         count = args.count;
         user_buf = (void __user *)(uintptr_t)args.buf_ptr;
+         printk(KERN_INFO "BRD_DUMP: sector=%llu, count=%u, buf_ptr=0x%llx\n",
+           (unsigned long long)args.sector,
+           args.count,
+           (unsigned long long)args.buf_ptr);
 
         if (count == 0 || count > 1024)  // ограничение безопасности
             return -EINVAL;
 
         if (start_sec + count > (bd->stat.size_bytes >> 9))
+            printk(KERN_ERR "BRD_DUMP: invalid count = %u\n", args.count);
             return -EINVAL;  // выход за пределы диска
 
         bytes = count << SECTOR_SHIFT;  // * 512

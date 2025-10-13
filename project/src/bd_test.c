@@ -17,11 +17,11 @@
 #define BRD_DUMP           _IOWR(BRD_IOC_MAGIC, 3, struct brd_dump_args)
 
 struct brd_dump_args {
-    __u64 sector;      // начальный сектор
-    __u32 count;       // количество секторов (макс. 1024)
-    __u64 buf_ptr;     // указатель на буфер в userspace
+    __u64 sector;
+    __u32 count;
+    __u32 __pad;   // ← явный padding!
+    __u64 buf_ptr;
 };
-
 
 int dump_sectors_to_file(int fd, const char *outfile, __u64 start_sector, __u32 count) {
     if (count == 0 || count > 1024) {
