@@ -1,26 +1,14 @@
-KERNEL_VER := $(shell uname -r)
-MODULE_NAME := pr_blk
-CUSTOM_KERNEL_DIR := /home/stv/kernel/linux-6.1.130
+# Внешний Makefile (в корне проекта)
 
-ifneq ($(wildcard $(CUSTOM_KERNEL_DIR)),)
-    KERNEL_DIR := $(CUSTOM_KERNEL_DIR)
-KERNEL_VER := 6.1.130
-else
-    KERNEL_DIR := /lib/modules/$(shell uname -r)/build
-endif
-
-# Проверка существования
-ifneq ($(wildcard $(KERNEL_DIR)),)
-    # OK
-else
-    $(error Required kernel source/build directory "$(KERNEL_DIR)" not found)
-endif
-
-# Далее ваша сборка...
-obj-m += src/$(MODULE_NAME).o
+.PHONY: all clean format
 
 all:
-	make -C $(KERNEL_DIR) M=$(PWD) modules
+	$(MAKE) -C src
 
 clean:
-	make -C $(KERNEL_DIR) M=$(PWD) clean
+	$(MAKE) -C src clean
+
+format:
+	@echo "Formatting all C source and header files..."
+	@find src -type f \( -name "*.c" -o -name "*.h" \) -exec clang-format -i {} +
+	@echo "Formatting complete."
