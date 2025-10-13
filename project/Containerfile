@@ -1,0 +1,36 @@
+FROM ubuntu:22.04
+
+# Установка зависимостей
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        build-essential \
+        libssl-dev \
+        flex \
+        bison \
+        libelf-dev \
+        bc \
+        wget \
+        tar \
+        ca-certificates \
+        && rm -rf /var/lib/apt/lists/*
+
+# Версия ядра
+ENV KERNEL_VERSION=6.1.130
+WORKDIR /kernel
+
+# Скачиваем и распаковываем исходники ядра
+RUN wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${KERNEL_VERSION}.tar.xz && \
+    tar -xf linux-${KERNEL_VERSION}.tar.xz && \
+    mv linux-${KERNEL_VERSION} src && \
+    cd src && \
+    # Создаём минимальный .config (или можно скопировать свой)
+    make defconfig && \
+    # Отключаем подпись модулей (чтобы не требовался openssl/engine.h)
+    scripts/config --disable MODULE_SIG && \
+    scripts/config --disable MODULE_SIG_ALL && \
+    make olddefconfig
+
+# Подготавливаем дерево для внешних модулей
+RUN cd src && make modules_prepare
+
+# Готово: /kernel/src — это build-директория
