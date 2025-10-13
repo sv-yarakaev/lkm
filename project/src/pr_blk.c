@@ -20,57 +20,28 @@
 #include <linux/seq_file.h>
 #include <linux/list.h>
 #include <linux/ioctl.h>
+#include <linux/device.h>
+#include <linux/ktime.h>
+#include "pr_blk.h"
+#include "bd_sysfs.h"
 
 //#include "pr_blk_proc.h"
+
+static void bd_submit_bio(struct bio* bio);  
+static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op); // todo убрать в заголовочный файл
+static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
+static void copy_from_bd(void *dst, struct block_dev *bd, sector_t sector, size_t n);
+static int copy_to_bd_setup(struct block_dev *bd, sector_t sector, size_t n, gfp_t gfp);
+static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp);
+static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector);
+static void copy_from_bd(void *dst, struct block_dev *brd, sector_t sector, size_t n);
+static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n);
+static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg);
+static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char *dst, unsigned int len);
+
+
 static LIST_HEAD(bd_devices);
 static DEFINE_MUTEX(bd_devices_mutex);
-
-struct ram_stat {
-    /* Счётчики операций */
-    atomic64_t reads;               // количество операций чтения
-    atomic64_t writes;              // количество операций записи
-    atomic64_t read_sectors;        // секторов прочитано (1 сектор = 512 байт)
-    atomic64_t written_sectors;     // секторов записано
-
-    /* Ошибки */
-    atomic64_t errors;              // ошибки (например, out-of-range)
-
-    /* Опционально: задержки */
-#ifdef BRD_COLLECT_LATENCY
-    atomic64_t total_read_time_ns;  // суммарное время чтения
-    atomic64_t total_write_time_ns; // суммарное время записи
-    atomic64_t max_read_time_ns;
-    atomic64_t max_write_time_ns;
-#endif
-     /* Дополнительная аналитика */
-    atomic64_t multi_segment_bios;   // bio с >1 сегментом
-    atomic64_t small_requests;       // запросы < 4 КБ (т.е. < 8 секторов)
-
-    /* Для расчёта среднего размера запроса */
-    atomic64_t total_requests;       // reads + writes
-    // Средний размер = (read_sectors + written_sectors) / total_requests
-
-    /* Время жизни диска */
-    ktime_t creation_time;           // не атомарное — устанавливается один раз
-    ktime_t deletion_time;           // можно не хранить, но полезно для лога
-
-
-    /* Статика (можно без атомарности) */
-    unsigned long size_pages;       // сколько страниц выделено
-    unsigned long size_bytes;       // общий размер в байтах
-};
-
-
-struct block_dev {
-    int bd_number;
-    struct gendisk *gdisk;
-
-    struct list_head bd_list;
-    spinlock_t bd_lock;
-    struct radix_tree_root bd_pages;
-    u64 bd_nr_pages;
-    struct ram_stat stat;
-};
 
 
 static struct proc_dir_entry *proc_dir = NULL;
@@ -173,18 +144,6 @@ MODULE_PARM_DESC(max_part, "Num Minors to reserve between devices");
 static struct dentry *bd_debugfs_dir;
 
 
-
-static void bd_submit_bio(struct bio* bio);  // todo убрать в заголовочный файл
-static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op); // todo убрать в заголовочный файл
-static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
-static void copy_from_bd(void *dst, struct block_dev *bd, sector_t sector, size_t n);
-static int copy_to_bd_setup(struct block_dev *bd, sector_t sector, size_t n, gfp_t gfp);
-static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp);
-static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector);
-static void copy_from_bd(void *dst, struct block_dev *brd, sector_t sector, size_t n);
-static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n);
-static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg);
-static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char *dst, unsigned int len);
 
 
 
@@ -772,6 +731,7 @@ static int bd_alloc(int n) {
     blk_queue_flag_set(QUEUE_FLAG_NOWAIT, disk->queue);
     
     error = add_disk(disk);// завершение регистрации
+    error = bd_sysfs_init(disk);
     if (error)   goto cleanup_disk;
 
     return 0;
@@ -892,4 +852,4 @@ module_exit(mblock_driver_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Stv");
 MODULE_DESCRIPTION("RAM-backed block device for kernel 6.1.130");
-MODULE_VERSION("1.1");
+MODULE_VERSION("1.2");
