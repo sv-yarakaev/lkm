@@ -254,9 +254,10 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
         if (count == 0 || count > 1024)  // ограничение безопасности
             return -EINVAL;
 
-        if (start_sec + count > (bd->stat.size_bytes >> 9))
+        if (start_sec + count > (bd->stat.size_bytes >> 9)) {
             printk(KERN_ERR "BRD_DUMP: invalid count = %u\n", args.count);
             return -EINVAL;  // выход за пределы диска
+        }
 
         bytes = count << SECTOR_SHIFT;  // * 512
         kbuf = kmalloc(bytes, GFP_KERNEL);
