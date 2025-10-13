@@ -41,6 +41,18 @@ struct ram_stat {
     atomic64_t max_read_time_ns;
     atomic64_t max_write_time_ns;
 #endif
+     /* Дополнительная аналитика */
+    atomic64_t multi_segment_bios;   // bio с >1 сегментом
+    atomic64_t small_requests;       // запросы < 4 КБ (т.е. < 8 секторов)
+
+    /* Для расчёта среднего размера запроса */
+    atomic64_t total_requests;       // reads + writes
+    // Средний размер = (read_sectors + written_sectors) / total_requests
+
+    /* Время жизни диска */
+    ktime_t creation_time;           // не атомарное — устанавливается один раз
+    ktime_t deletion_time;           // можно не хранить, но полезно для лога
+
 
     /* Статика (можно без атомарности) */
     unsigned long size_pages;       // сколько страниц выделено
@@ -67,23 +79,49 @@ static struct proc_dir_entry *proc_file = NULL;
 
 
 static int bd_proc_show(struct seq_file *m, void *v) {
-    extern int brd_nr;
-    extern int brd_size;
-    seq_printf(m, "brd_nr: %d\n", brd_nr);
-    seq_printf(m, "brd_size: %d MB\n", brd_size);
-
+    
     struct block_dev *bd;
-    seq_printf(m, "%-8s %-12s %-12s %-16s %-16s %-10s\n",
-               "Device", "Reads", "Writes", "ReadSectors", "WriteSectors", "Errors");
+    
+
+    seq_printf(m,
+        "%-6s %-10s %-10s %-10s %-12s %-12s %-10s %-10s %-10s %-12s\n",
+        "Dev", "Size(KB)", "Reads", "Writes", "ReadSec", "WriteSec",
+        "MultiSeg", "SmallReq", "Errors", "AvgSize(B)"
+    );
     list_for_each_entry(bd, &bd_devices, bd_list) {
         u64 reads = atomic64_read(&bd->stat.reads);
         u64 writes = atomic64_read(&bd->stat.writes);
-        u64 rsec = atomic64_read(&bd->stat.read_sectors);
-        u64 wsec = atomic64_read(&bd->stat.written_sectors);
-        u64 errs = atomic64_read(&bd->stat.errors);
+        u64 read_sec = atomic64_read(&bd->stat.read_sectors);
+        u64 write_sec = atomic64_read(&bd->stat.written_sectors);
+        u64 multi_seg = atomic64_read(&bd->stat.multi_segment_bios);
+        u64 small_req = atomic64_read(&bd->stat.small_requests);
+        u64 errors = atomic64_read(&bd->stat.errors);
+        u64 total_req = reads + writes;
+        u64 total_sec = read_sec + write_sec;
 
-        seq_printf(m, "ram%-6d %-12llu %-12llu %-16llu %-16llu %-10llu\n",
-                   bd->bd_number, reads, writes, rsec, wsec, errs);
+        unsigned long size_kb = bd->stat.size_bytes >> 10;
+        u64 avg_size = total_req ? (total_sec * SECTOR_SIZE) / total_req : 0;
+
+        // Время жизни (опционально — можно добавить в конец)
+        s64 lifetime_ms = -1;
+        if (bd->stat.creation_time) {
+            ktime_t now = ktime_get();
+            lifetime_ms = ktime_to_ms(ktime_sub(now, bd->stat.creation_time));
+        }
+
+        seq_printf(m,
+            "ram%-4d %-10lu %-10llu %-10llu %-12llu %-12llu %-10llu %-10llu %-10llu %-12llu\n",
+            bd->bd_number,
+            size_kb,
+            reads,
+            writes,
+            read_sec,
+            write_sec,
+            multi_seg,
+            small_req,
+            errors,
+            avg_size
+        );
     }
 
     
@@ -365,11 +403,10 @@ static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len,
     unsigned int off, blk_opf_t opf, sector_t sector) {
         int err = 0;
         void *mem; 
+
         /* Макрос op_is_write() проверяет тип операции (REQ_OP_WRITE, REQ_OP_FLUSH, и др.). */
         if (op_is_write(opf)) {  
-            // stat collect без latency
-            atomic64_inc(&bd->stat.writes);
-            atomic64_add(sector, &bd->stat.written_sectors);
+            
             /*
             Если BIO помечено REQ_NOWAIT, то нельзя блокироваться → используем GFP_NOWAIT.
             Иначе — GFP_NOIO, чтобы запретить I/O при аллокации (во избежание рекурсии в блоковый слой)
@@ -382,13 +419,12 @@ static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len,
         }
         mem = kmap_atomic(page);
         if (!op_is_write(opf)) {
-            // stat collect in read without latency
-            atomic64_inc(&bd->stat.reads);
-            atomic64_add(sector, &bd->stat.read_sectors);
+            
 
             copy_from_bd(mem + off, bd, sector, len);
 		    flush_dcache_page(page);
         } else {
+                        
             flush_dcache_page(page);
 		    copy_to_bd(bd, mem + off, sector, len);
         }
@@ -437,6 +473,29 @@ static void bd_submit_bio(struct bio* bio) {
     sector_t sector = bio->bi_iter.bi_sector;
     struct bio_vec bvec;
     struct bvec_iter iter;
+
+    /* === СБОР СТАТИСТИКИ ПО BIO === */
+	bool is_write = op_is_write(bio_op(bio));
+	unsigned int sectors = bio_sectors(bio);
+	unsigned int nsegs = bio_segments(bio);
+	bool is_small = (sectors << SECTOR_SHIFT) < 4096; // < 4 KiB
+
+	/* Обновляем счётчики */
+	atomic64_inc(&bd->stat.total_requests);
+	if (is_write) {
+		atomic64_inc(&bd->stat.writes);
+		atomic64_add(sectors, &bd->stat.written_sectors);
+	} else {
+		atomic64_inc(&bd->stat.reads);
+		atomic64_add(sectors, &bd->stat.read_sectors);
+	}
+
+	if (nsegs > 1)
+		atomic64_inc(&bd->stat.multi_segment_bios);
+
+	if (is_small)
+		atomic64_inc(&bd->stat.small_requests);
+
     bio_for_each_segment(bvec, bio, iter) {
         unsigned int len = bvec.bv_len;
         int err;
@@ -453,6 +512,7 @@ static void bd_submit_bio(struct bio* bio) {
         */
         err = bd_do_bvec(bd, bvec.bv_page, len, bvec.bv_offset, bio->bi_opf, sector);
         if (err) {
+            atomic64_inc(&bd->stat.errors); // <-- ошибка!
 			if (err == -ENOMEM && bio->bi_opf & REQ_NOWAIT) {
 				bio_wouldblock_error(bio);
 				return;
