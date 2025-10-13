@@ -184,6 +184,7 @@ static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector);
 static void copy_from_bd(void *dst, struct block_dev *brd, sector_t sector, size_t n);
 static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n);
 static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg);
+static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char *dst, unsigned int len);
 
 
 
@@ -196,6 +197,13 @@ static const struct block_device_operations bd_fops = {
 #define BRD_IOC_MAGIC 'R'
 #define BRD_RESET_STATS     _IO(BRD_IOC_MAGIC, 0)
 #define BRD_GET_UPTIME_MS  _IOR(BRD_IOC_MAGIC, 1, __u64)
+#define BRD_DUMP _IOWR(BRD_IOC_MAGIC, 3, struct brd_dump_args)
+struct brd_dump_args {
+    __u64 sector;      // с какого сектора читать
+    __u32 count;       // сколько секторов (макс. 1024)
+    __u64 buf_ptr;     // указатель на буфер в userspace (uintptr_t)
+};
+
 static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg) {
     struct block_dev *bd = bdev->bd_disk->private_data;
     int err = 0;
@@ -221,6 +229,43 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
             err = -EFAULT;
         break;
     }
+    case BRD_DUMP: {
+        struct brd_dump_args args;
+        void __user *user_buf;
+        sector_t start_sec;
+        unsigned int count;
+        unsigned int bytes;
+        char *kbuf;
+        int ret = 0;
+
+        if (copy_from_user(&args, (void __user *)arg, sizeof(args)))
+            return -EFAULT;
+
+        start_sec = args.sector;
+        count = args.count;
+        user_buf = (void __user *)(uintptr_t)args.buf_ptr;
+
+        if (count == 0 || count > 1024)  // ограничение безопасности
+            return -EINVAL;
+
+        if (start_sec + count > (bd->stat.size_bytes >> 9))
+            return -EINVAL;  // выход за пределы диска
+
+        bytes = count << SECTOR_SHIFT;  // * 512
+        kbuf = kmalloc(bytes, GFP_KERNEL);
+        if (!kbuf)
+            return -ENOMEM;
+
+        // Читаем данные из RAM-диска в kbuf
+        ret = brd_read_pages_to_buffer(bd, start_sec, kbuf, bytes);
+        if (ret == 0) {
+            if (copy_to_user(user_buf, kbuf, bytes))
+                ret = -EFAULT;
+        }
+
+        kfree(kbuf);
+        return ret;
+    }
 
     default:
         err = -ENOTTY;  // неизвестная команда
@@ -230,7 +275,33 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
     return err;
 }
 
+static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char *dst, unsigned int len)
+{
+     unsigned int copied = 0;
+    unsigned int pg_sectors = PAGE_SIZE >> SECTOR_SHIFT; // 8 для 4K страниц
 
+    while (copied < len) {
+        sector_t sec = sector + (copied >> SECTOR_SHIFT);
+        unsigned int pg_off = (sec % pg_sectors) << SECTOR_SHIFT; // * 512
+        unsigned int to_copy;
+        struct page *page;
+        void *src;
+
+        page = bd_lookup_page(bd, sec);
+        if (!page)
+            return -EIO;
+
+        to_copy = min(len - copied, (unsigned int)(PAGE_SIZE - pg_off));
+
+        src = kmap_atomic(page);
+        memcpy(dst + copied, src + pg_off, to_copy);
+        kunmap_atomic(src);
+
+        copied += to_copy;
+    }
+
+    return 0;
+}
 
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op) {
     struct block_dev *bd = bdev->bd_disk->private_data;
