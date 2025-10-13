@@ -19,7 +19,7 @@
 struct brd_dump_args {
     __u64 sector;
     __u32 count;
-    __u32 __pad;   // ← явный padding!
+    __u32 __pad;   //  явный padding!
     __u64 buf_ptr;
 };
 
