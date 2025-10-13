@@ -1,3 +1,4 @@
+#include "linux/list.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/init.h>
 #include <linux/initrd.h>
@@ -20,6 +21,44 @@
 #include <linux/seq_file.h>
 
 //#include "pr_blk_proc.h"
+static LIST_HEAD(bd_devices);
+static DEFINE_MUTEX(bd_devices_mutex);
+
+struct ram_stat {
+    /* Счётчики операций */
+    atomic64_t reads;               // количество операций чтения
+    atomic64_t writes;              // количество операций записи
+    atomic64_t read_sectors;        // секторов прочитано (1 сектор = 512 байт)
+    atomic64_t written_sectors;     // секторов записано
+
+    /* Ошибки */
+    atomic64_t errors;              // ошибки (например, out-of-range)
+
+    /* Опционально: задержки */
+#ifdef BRD_COLLECT_LATENCY
+    atomic64_t total_read_time_ns;  // суммарное время чтения
+    atomic64_t total_write_time_ns; // суммарное время записи
+    atomic64_t max_read_time_ns;
+    atomic64_t max_write_time_ns;
+#endif
+
+    /* Статика (можно без атомарности) */
+    unsigned long size_pages;       // сколько страниц выделено
+    unsigned long size_bytes;       // общий размер в байтах
+};
+
+
+struct block_dev {
+    int bd_number;
+    struct gendisk *gdisk;
+
+    struct list_head bd_list;
+    spinlock_t bd_lock;
+    struct radix_tree_root bd_pages;
+    u64 bd_nr_pages;
+    struct ram_stat stat;
+};
+
 
 static struct proc_dir_entry *proc_dir = NULL;
 static struct proc_dir_entry *proc_file = NULL;
@@ -32,6 +71,24 @@ static int bd_proc_show(struct seq_file *m, void *v) {
     extern int brd_size;
     seq_printf(m, "brd_nr: %d\n", brd_nr);
     seq_printf(m, "brd_size: %d MB\n", brd_size);
+
+    struct block_dev *bd;
+    seq_printf(m, "%-8s %-12s %-12s %-16s %-16s %-10s\n",
+               "Device", "Reads", "Writes", "ReadSectors", "WriteSectors", "Errors");
+    list_for_each_entry(bd, &bd_devices, bd_list) {
+        u64 reads = atomic64_read(&bd->stat.reads);
+        u64 writes = atomic64_read(&bd->stat.writes);
+        u64 rsec = atomic64_read(&bd->stat.read_sectors);
+        u64 wsec = atomic64_read(&bd->stat.written_sectors);
+        u64 errs = atomic64_read(&bd->stat.errors);
+
+        seq_printf(m, "ram%-6d %-12llu %-12llu %-16llu %-16llu %-10llu\n",
+                   bd->bd_number, reads, writes, rsec, wsec, errs);
+    }
+
+    
+
+
     return 0;
 }
 // Функция открытия файла
@@ -51,7 +108,7 @@ const struct proc_ops proc_fops = {
 
 /* Проверка версии ядра */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6,1,0) || LINUX_VERSION_CODE > KERNEL_VERSION(6,1,255)
-#warning "Этот модуль предназначен для ядра 6.1.x (например, 6.1.130)"
+#warning "Этот модуль предназначен для ядра 6.1.x (в частности для, 6.1.130)"
 #endif
 
 #define DEVICE_NAME "testblk"
@@ -67,15 +124,7 @@ const struct proc_ops proc_fops = {
 static struct dentry *bd_debugfs_dir;
 static int max_part = 1;
 
-struct block_dev {
-    int bd_number;
-    struct gendisk *gdisk;
 
-    struct list_head bd_list;
-    spinlock_t bd_lock;
-    struct radix_tree_root bd_pages;
-    u64 bd_nr_pages;
-};
 static void bd_submit_bio(struct bio* bio);  // todo убрать в заголовочный файл
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op); // todo убрать в заголовочный файл
 static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector);
@@ -318,10 +367,14 @@ static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len,
         void *mem; 
         /* Макрос op_is_write() проверяет тип операции (REQ_OP_WRITE, REQ_OP_FLUSH, и др.). */
         if (op_is_write(opf)) {  
+            // stat collect без latency
+            atomic64_inc(&bd->stat.writes);
+            atomic64_add(sector, &bd->stat.written_sectors);
             /*
             Если BIO помечено REQ_NOWAIT, то нельзя блокироваться → используем GFP_NOWAIT.
             Иначе — GFP_NOIO, чтобы запретить I/O при аллокации (во избежание рекурсии в блоковый слой)
             */
+
             gfp_t gfp = opf & REQ_NOWAIT ? GFP_NOWAIT : GFP_NOIO;
             err = copy_to_bd_setup(bd, sector, len, gfp);
             if (err) goto out;
@@ -329,6 +382,10 @@ static int bd_do_bvec(struct block_dev *bd, struct page *page, unsigned int len,
         }
         mem = kmap_atomic(page);
         if (!op_is_write(opf)) {
+            // stat collect in read without latency
+            atomic64_inc(&bd->stat.reads);
+            atomic64_add(sector, &bd->stat.read_sectors);
+
             copy_from_bd(mem + off, bd, sector, len);
 		    flush_dcache_page(page);
         } else {
@@ -415,8 +472,6 @@ static void bd_submit_bio(struct bio* bio) {
  * устройство уже существует, функция возвращает ERR_PTR(-EEXIST), а не
  * сам указатель. Это поведение используется вызывающими функциями.
  */
-static LIST_HEAD(bd_devices);
-static DEFINE_MUTEX(bd_devices_mutex);
 
 
 static struct block_dev* bd_alloc_dev(int n) {
