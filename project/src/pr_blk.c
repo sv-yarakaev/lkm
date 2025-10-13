@@ -242,7 +242,8 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
         printk(KERN_INFO "arg ptr = 0x%lx\n", arg);
         if (copy_from_user(&args, (void __user *)arg, sizeof(args)))
             return -EFAULT;
-
+        printk(KERN_INFO "RAW: sector=0x%llx, count_raw=0x%x, buf_ptr=0x%llx\n",
+           args.sector, args.count, args.buf_ptr);
         start_sec = args.sector;
         count = args.count;
         user_buf = (void __user *)(uintptr_t)args.buf_ptr;
@@ -253,6 +254,10 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
 
         if (count == 0 || count > 1024)  // ограничение безопасности
             return -EINVAL;
+        if (args.count == 0 || args.count > 1024) {
+            printk(KERN_ERR "REJECTED: count=%u (0x%x)\n", args.count, args.count);
+            return -EINVAL;
+        }
 
         if (start_sec + count > (bd->stat.size_bytes >> 9)) {
             printk(KERN_ERR "BRD_DUMP: invalid count = %u\n", args.count);
