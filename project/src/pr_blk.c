@@ -1,4 +1,3 @@
-#include "linux/list.h"
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/init.h>
 #include <linux/initrd.h>
@@ -19,6 +18,8 @@
 #include <linux/uaccess.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+#include <linux/list.h>
+#include <linux/ioctl.h>
 
 //#include "pr_blk_proc.h"
 static LIST_HEAD(bd_devices);
@@ -156,11 +157,21 @@ const struct proc_ops proc_fops = {
 #define BDISKMAJOR		1
 
 //static unsigned long rd_size = 4096;
+static int rd_nr = 3;
+module_param(rd_nr, int, 0444);
+MODULE_PARM_DESC(rd_nr, "Maximum number of brd devices");
 
+unsigned long rd_size = 104858; // MiB 100 * 1024
+module_param(rd_size, ulong, 0444);
+MODULE_PARM_DESC(rd_size, "Size of each RAM disk in kbytes.");
+
+static int max_part = 1;
+module_param(max_part, int, 0444);
+MODULE_PARM_DESC(max_part, "Num Minors to reserve between devices");
 //static int dev_major;
 //static struct block_dev *block_device;
 static struct dentry *bd_debugfs_dir;
-static int max_part = 1;
+
 
 
 static void bd_submit_bio(struct bio* bio);  // todo убрать в заголовочный файл
@@ -172,7 +183,7 @@ static int bd_insert_page(struct block_dev *bd, sector_t sector, gfp_t gfp);
 static struct page *bd_lookup_page(struct block_dev *bd, sector_t sector);
 static void copy_from_bd(void *dst, struct block_dev *brd, sector_t sector, size_t n);
 static void copy_to_bd(struct block_dev *bd, const void *src, sector_t sector, size_t n);
-
+static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg);
 
 
 
@@ -180,7 +191,46 @@ static const struct block_device_operations bd_fops = {
 	.owner =		THIS_MODULE,
 	.submit_bio =		bd_submit_bio,
 	.rw_page =		bd_rw_page,
+    .ioctl = bd_ioctl,
 };
+#define BRD_IOC_MAGIC 'R'
+#define BRD_RESET_STATS     _IO(BRD_IOC_MAGIC, 0)
+#define BRD_GET_UPTIME_MS  _IOR(BRD_IOC_MAGIC, 1, __u64)
+static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg) {
+    struct block_dev *bd = bdev->bd_disk->private_data;
+    int err = 0;
+
+    switch (cmd) {
+    case BRD_RESET_STATS:
+        /* Обнуляем все счётчики статистики */
+        atomic64_set(&bd->stat.reads, 0);
+        atomic64_set(&bd->stat.writes, 0);
+        atomic64_set(&bd->stat.read_sectors, 0);
+        atomic64_set(&bd->stat.written_sectors, 0);
+        atomic64_set(&bd->stat.errors, 0);
+        atomic64_set(&bd->stat.multi_segment_bios, 0);
+        atomic64_set(&bd->stat.small_requests, 0);
+        atomic64_set(&bd->stat.total_requests, 0);
+        break;
+
+    case BRD_GET_UPTIME_MS: {
+        __u64 uptime_ms;
+        ktime_t now = ktime_get();
+        uptime_ms = ktime_to_ms(ktime_sub(now, bd->stat.creation_time));
+        if (copy_to_user((void __user *)arg, &uptime_ms, sizeof(uptime_ms)))
+            err = -EFAULT;
+        break;
+    }
+
+    default:
+        err = -ENOTTY;  // неизвестная команда
+        break;
+    }
+
+    return err;
+}
+
+
 
 static int bd_rw_page(struct block_device *bdev, sector_t sector, struct page *page, enum req_op op) {
     struct block_dev *bd = bdev->bd_disk->private_data;
@@ -711,7 +761,7 @@ static int __init mblock_driver_init(void)
         error = -EIO;
         return major;
     }
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < rd_nr; i++)
 		bd_alloc(i);
     pr_info("module loaded\n");
     return 0;
