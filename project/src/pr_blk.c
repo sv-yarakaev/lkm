@@ -290,18 +290,19 @@ static int bd_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, u
 
 static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char *dst, unsigned int len)
 {
-     unsigned int copied = 0;
+    unsigned int copied = 0;
     unsigned int pg_sectors = PAGE_SIZE >> SECTOR_SHIFT; // 8 для 4K страниц
 
     while (copied < len) {
         sector_t sec = sector + (copied >> SECTOR_SHIFT);
         unsigned int pg_off = (sec % pg_sectors) << SECTOR_SHIFT; // * 512
-        unsigned int to_copy;
+        //unsigned int to_copy;
+        unsigned int to_copy = min(len - copied, (unsigned int)(PAGE_SIZE - pg_off));
         struct page *page;
         void *src;
 
         page = bd_lookup_page(bd, sec);
-        if (!page)
+        /*if (!page)
             return -EIO;
 
         to_copy = min(len - copied, (unsigned int)(PAGE_SIZE - pg_off));
@@ -309,6 +310,17 @@ static int brd_read_pages_to_buffer(struct block_dev *bd, sector_t sector, char 
         src = kmap_atomic(page);
         memcpy(dst + copied, src + pg_off, to_copy);
         kunmap_atomic(src);
+        */
+        if (page) {
+            // Страница существует — копируем данные
+            src = kmap_atomic(page);
+            memcpy(dst + copied, src + pg_off, to_copy);
+            kunmap_atomic(src);
+        } else {
+            // Страница не выделена — возвращаем нули
+            memset(dst + copied, 0, to_copy);
+        }
+
 
         copied += to_copy;
     }
