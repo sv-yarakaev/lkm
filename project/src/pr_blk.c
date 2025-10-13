@@ -690,6 +690,13 @@ static struct block_dev* bd_alloc_dev(int n) {
         return ERR_PTR(-ENOMEM);
     }
     bd->bd_number = n;
+
+    unsigned long nr_pages = DIV_ROUND_UP(rd_size * 1024, PAGE_SIZE);
+    unsigned long size_bytes = nr_pages * PAGE_SIZE;
+
+    // Теперь сохраняем в статистике:
+    bd->stat.size_pages = nr_pages;
+    bd->stat.size_bytes = size_bytes;
     
     list_add_tail(&bd->bd_list, &bd_devices);
     mutex_unlock(&bd_devices_mutex);
