@@ -5,7 +5,7 @@
 #include <linux/module.h>
 #include <linux/bitmap.h>
 #include <linux/random.h>
-
+#include <linux/slab.h>
 #define NR_ARRAY 2
 
 
